@@ -1,0 +1,57 @@
+# SkillGap AI Configuration
+# All tunable parameters for the ML pipeline
+
+embedding:
+  model: "all-MiniLM-L6-v2"
+  dimension: 384
+
+similarity:
+  threshold_good: 0.70
+  threshold_excellent: 0.85
+  threshold_soft_gap: 0.60
+
+scoring:
+  weight_skills: 0.6
+  weight_projects: 0.2
+  weight_experience: 0.2
+  keyword_boost_max: 0.05
+  exp_penalty_per_year: 0.07
+
+calibration:
+  base_multiplier: 10
+  base_offset: 5
+  seniority_junior_discount: 0.85
+  seniority_senior_bonus: 1.10
+  seniority_bonus_cap: 100
+
+skill_processing:
+  use_expansion: true
+  max_expansions_per_skill: 3
+  expansion_deduplication: true
+
+domain_factors:
+  tech: 1.0
+  finance: 0.92
+  healthcare: 0.88
+  default: 1.0
+
+experience:
+  max_years_penalty: 10
+
+job_titles:
+  top_n_recommendations: 5
+  vector_store_type: "chroma" # or "pinecone"
+
+llm:
+  model: "gpt-4o-mini"
+  temperature: 0.3
+  max_tokens: 3000
+  timeout_seconds: 60
+
+redis:
+  cache_ttl_seconds: 3600
+  result_ttl_seconds: 86400
+
+logging:
+  level: "INFO"
+  format: "json"

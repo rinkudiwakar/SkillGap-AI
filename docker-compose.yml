@@ -1,0 +1,84 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: skillgap_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: skillgap_api
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=development
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - GITHUB_PAT=${GITHUB_PAT}
+      - GITHUB_MODELS_API_URL=${GITHUB_MODELS_API_URL:-https://models.github.ai/inference/chat/completions}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini}
+      - SECRET_KEY=dev-secret-key
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8000
+      - USE_SKILL_EXPANSION=${USE_SKILL_EXPANSION:-true}
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/uploads
+      - logs:/app/logs
+    command: uvicorn fastapi_app.main:app --host 0.0.0.0 --port 8000
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: skillgap_worker
+    environment:
+      - APP_ENV=development
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - GITHUB_PAT=${GITHUB_PAT}
+      - GITHUB_MODELS_API_URL=${GITHUB_MODELS_API_URL:-https://models.github.ai/inference/chat/completions}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini}
+      - SECRET_KEY=dev-secret-key
+      - USE_SKILL_EXPANSION=${USE_SKILL_EXPANSION:-true}
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - logs:/app/logs
+      - uploads:/app/uploads
+
+  flower:
+    image: mher/flower:2.0
+    container_name: skillgap_flower
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    depends_on:
+      - redis
+    command: celery -A fastapi_app.worker flower --port=5555
+
+volumes:
+  redis_data:
+  uploads:
+  logs:

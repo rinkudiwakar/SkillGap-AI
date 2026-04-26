@@ -1,0 +1,617 @@
+"""
+LLM Service Layer for Dual Provider Support (Groq + Together AI).
+Handles centralized LLM requests with intelligent failover.
+
+PRIMARY: Groq (llama3-70b-8192) - fast, low-cost
+FALLBACK: Together AI (mistralai/Mistral-Small-24B-Instruct-2501) - reliable fallback
+
+Single API call per analysis with strict JSON output.
+"""
+import os
+import json
+import time
+import re
+from typing import List, Dict, Any, Optional, Literal
+import requests
+
+from fastapi_app.config import get_config
+from fastapi_app.utils.prompt_loader import load_prompt
+from src.logger.logging import get_logger
+
+logger = get_logger(__name__)
+
+config = get_config()
+
+
+class LLMServiceError(Exception):
+    """Base exception for LLM service errors."""
+    pass
+
+
+class LLMProviderError(LLMServiceError):
+    """Exception for LLM provider-specific errors."""
+    pass
+
+
+class GroqProvider:
+    """Groq Provider - Primary LLM service using llama3-70b-8192."""
+    
+    def __init__(self):
+        """Initialize Groq provider."""
+        self.api_key = os.getenv("GROQ_API_KEY") or config.GROQ_API_KEY
+        self.model = "llama3-70b-8192"
+        self.base_url = "https://api.groq.com/openai/v1"
+        
+        if not self.api_key:
+            raise LLMProviderError("GROQ_API_KEY not configured")
+        
+        logger.info(f"Groq provider initialized with model: {self.model}")
+    
+    def call(
+        self,
+        prompt: str,
+        max_retries: int = 1,
+        temperature: float = 0.3,
+        timeout: int = 6
+    ) -> str:
+        """
+        Call Groq API.
+        
+        Args:
+            prompt: prompt text
+            max_retries: number of retries
+            temperature: sampling temperature
+            timeout: request timeout in seconds
+            
+        Returns:
+            model response
+            
+        Raises:
+            LLMProviderError: if call fails
+        """
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": self.model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are an expert career advisor. Return ONLY valid JSON with no additional text or explanations."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "temperature": temperature,
+            "max_tokens": 2000,
+            "top_p": 1
+        }
+        
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"[GROQ] Attempt {attempt + 1}/{max_retries}: Calling Groq API (timeout={timeout}s)")
+                
+                response = requests.post(
+                    f"{self.base_url}/chat/completions",
+                    headers=headers,
+                    json=payload,
+                    timeout=timeout
+                )
+                
+                logger.info(f"[GROQ] Response status: {response.status_code}")
+                
+                # Handle rate limiting
+                if response.status_code == 429:
+                    delay = min(2 ** attempt, 4)  # Cap delay at 4 seconds
+                    logger.warning(f"[GROQ] Rate limited (429). Retrying in {delay}s...")
+                    time.sleep(delay)
+                    continue
+                
+                response.raise_for_status()
+                result = response.json()
+                
+                # Extract content
+                try:
+                    content = result["choices"][0]["message"]["content"].strip()
+                    logger.info(f"[GROQ] ✅ Success - Response length: {len(content)} chars")
+                    return content
+                except (KeyError, IndexError, TypeError) as e:
+                    logger.error(f"[GROQ] Unexpected response structure: {e}")
+                    raise LLMProviderError(f"Invalid response structure: {e}")
+            
+            except requests.exceptions.Timeout:
+                logger.error(f"[GROQ] ⏱️  TIMEOUT on attempt {attempt + 1}/{max_retries}")
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+                else:
+                    raise LLMProviderError(f"Groq timeout after {max_retries} retries")
+            
+            except requests.exceptions.ConnectionError as e:
+                logger.error(f"[GROQ] 🔌 CONNECTION ERROR: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+                else:
+                    raise LLMProviderError(f"Groq connection error: {e}")
+            
+            except requests.exceptions.HTTPError as e:
+                logger.error(f"[GROQ] ❌ HTTP ERROR: {e}")
+                raise LLMProviderError(f"Groq HTTP error: {e}")
+            
+            except requests.exceptions.RequestException as e:
+                logger.error(f"[GROQ] API error: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+                else:
+                    raise LLMProviderError(f"Groq API failed: {e}")
+            
+            except Exception as e:
+                logger.error(f"[GROQ] Unexpected error: {e}")
+                raise LLMProviderError(f"Groq error: {e}")
+        
+        raise LLMProviderError("Groq: Max retries exceeded")
+
+
+class TogetherAIProvider:
+    """Together AI Provider - Fallback using mistralai/Mistral-Small-24B-Instruct-2501."""
+    
+    def __init__(self):
+        """Initialize Together AI provider."""
+        self.api_key = os.getenv("TOGETHER_API_KEY") or config.TOGETHER_API_KEY
+        self.model = "mistralai/Mistral-Small-24B-Instruct-2501"
+        self.base_url = "https://api.together.xyz"
+        
+        if not self.api_key:
+            raise LLMProviderError("TOGETHER_API_KEY not configured")
+        
+        logger.info(f"Together AI provider initialized with model: {self.model}")
+    
+    def call(
+        self,
+        prompt: str,
+        max_retries: int = 1,
+        temperature: float = 0.3,
+        timeout: int = 6
+    ) -> str:
+        """
+        Call Together AI API.
+        
+        Args:
+            prompt: prompt text
+            max_retries: number of retries
+            temperature: sampling temperature
+            timeout: request timeout in seconds
+            
+        Returns:
+            model response
+            
+        Raises:
+            LLMProviderError: if call fails
+        """
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": self.model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are an expert career advisor. Return ONLY valid JSON with no additional text or explanations."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "temperature": temperature,
+            "max_tokens": 2000,
+            "top_p": 1
+        }
+        
+        url = f"{self.base_url}/v1/chat/completions"
+        
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"[TOGETHER] Attempt {attempt + 1}/{max_retries}: Calling Together AI API (timeout={timeout}s)")
+                
+                response = requests.post(
+                    url,
+                    headers=headers,
+                    json=payload,
+                    timeout=timeout
+                )
+                
+                logger.info(f"[TOGETHER] Response status: {response.status_code}")
+                
+                # Handle rate limiting
+                if response.status_code == 429:
+                    delay = min(2 ** attempt, 4)
+                    logger.warning(f"[TOGETHER] Rate limited (429). Retrying in {delay}s...")
+                    time.sleep(delay)
+                    continue
+                
+                response.raise_for_status()
+                result = response.json()
+                
+                # Extract content
+                try:
+                    content = result["choices"][0]["message"]["content"].strip()
+                    logger.info(f"[TOGETHER] ✅ Success - Response length: {len(content)} chars")
+                    return content
+                except (KeyError, IndexError, TypeError) as e:
+                    logger.error(f"[TOGETHER] Unexpected response structure: {e}")
+                    raise LLMProviderError(f"Invalid response structure: {e}")
+            
+            except requests.exceptions.Timeout:
+                logger.error(f"[TOGETHER] ⏱️  TIMEOUT on attempt {attempt + 1}/{max_retries}")
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+                else:
+                    raise LLMProviderError(f"Together AI timeout after {max_retries} retries")
+            
+            except requests.exceptions.ConnectionError as e:
+                logger.error(f"[TOGETHER] 🔌 CONNECTION ERROR: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+                else:
+                    raise LLMProviderError(f"Together AI connection error: {e}")
+            
+            except requests.exceptions.HTTPError as e:
+                logger.error(f"[TOGETHER] ❌ HTTP ERROR: {e}")
+                raise LLMProviderError(f"Together AI HTTP error: {e}")
+            
+            except requests.exceptions.RequestException as e:
+                logger.error(f"[TOGETHER] API error: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+                else:
+                    raise LLMProviderError(f"Together AI API failed: {e}")
+            
+            except Exception as e:
+                logger.error(f"[TOGETHER] Unexpected error: {e}")
+                raise LLMProviderError(f"Together AI error: {e}")
+        
+        raise LLMProviderError("Together AI: Max retries exceeded")
+
+
+class LLMService:
+    """
+    Unified LLM service with dual provider support and intelligent fallback.
+    """
+    
+    def __init__(self):
+        """Initialize LLM service."""
+        self.openai_provider = None
+        self.gemini_provider = None
+        self._initialize_providers()
+    
+    def _initialize_providers(self):
+        """Initialize available providers."""
+        try:
+            self.openai_provider = OpenAIProvider()
+            logger.info("OpenAI provider initialized")
+        except LLMProviderError as e:
+            logger.warning(f"OpenAI provider unavailable: {e}")
+        
+        try:
+            self.gemini_provider = GeminiProvider()
+            logger.info("Gemini provider initialized")
+        except LLMProviderError as e:
+            logger.warning(f"Gemini provider unavailable: {e}")
+        
+        if not self.openai_provider and not self.gemini_provider:
+            raise LLMServiceError("No LLM providers configured")
+    
+    def _parse_json_response(self, response: str) -> Dict[str, Any]:
+        """
+        Parse JSON response from LLM.
+        
+        Args:
+            response: LLM response string
+            
+        Returns:
+            parsed JSON dict
+            
+        Raises:
+            LLMServiceError: if parsing fails
+        """
+        try:
+            # Try to find JSON in response (handle cases with extra text)
+            import re
+            json_match = re.search(r'\{.*\}', response, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(0)
+                return json.loads(json_str)
+            else:
+                raise json.JSONDecodeError("No JSON found", response, 0)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON response: {e}\nResponse: {response}")
+            raise LLMServiceError(f"Invalid JSON in response: {e}")
+    
+    def _validate_bullet_count(
+        self,
+        input_bullets: List[str],
+        output_bullets: List[str]
+    ) -> None:
+        """
+        Validate that output bullet count matches input.
+        
+        Args:
+            input_bullets: original bullets
+            output_bullets: rewritten bullets
+            
+        Raises:
+            LLMServiceError: if counts don't match
+        """
+        if len(output_bullets) != len(input_bullets):
+            raise LLMServiceError(
+                f"Bullet count mismatch: input={len(input_bullets)}, "
+                f"output={len(output_bullets)}"
+            )
+    
+    def _build_bullet_text(self, bullets: List[str]) -> str:
+        """
+        Format bullets for prompt.
+        
+        Args:
+            bullets: list of bullet points
+            
+        Returns:
+            formatted bullet text
+        """
+        return "\n".join([f"- {bullet}" for bullet in bullets])
+    
+    def _call_provider(
+        self,
+        provider: Optional[Any],
+        prompt: str,
+        temperature: float = 0.3
+    ) -> str:
+        """
+        Call an LLM provider.
+        
+        Args:
+            provider: provider instance
+            prompt: prompt text
+            temperature: sampling temperature
+            
+        Returns:
+            model response
+            
+        Raises:
+            LLMProviderError: if call fails
+        """
+        if not provider:
+            raise LLMProviderError("Provider not available")
+        
+        return provider.call(prompt, temperature=temperature)
+    
+    def rewrite_bullets(
+        self,
+        jd_keywords: List[str],
+        role: str,
+        bullets: List[str],
+        priority: Literal["high", "low"] = "high"
+    ) -> List[str]:
+        """
+        Rewrite multiple resume bullets in a single API call.
+        
+        Args:
+            jd_keywords: JD keywords to incorporate
+            role: target job role
+            bullets: list of bullet points to rewrite
+            priority: priority level - "high" uses OpenAI, "low" uses Gemini
+            
+        Returns:
+            list of rewritten bullets
+            
+        Raises:
+            LLMServiceError: if rewriting fails
+        """
+        if not bullets:
+            logger.warning("No bullets provided for rewriting")
+            return []
+        
+        try:
+            # Load prompt template
+            prompt_template = load_prompt("rewrite.txt")
+            
+            # Prepare context
+            keywords_str = ", ".join(jd_keywords[:10])
+            bullets_text = self._build_bullet_text(bullets)
+            
+            # Format prompt
+            prompt = prompt_template.format(
+                jd_keywords=keywords_str,
+                role=role,
+                bullets=bullets_text
+            )
+            
+            logger.debug(f"Rewriting {len(bullets)} bullets for role: {role}")
+            
+            # Determine primary and fallback providers
+            if priority == "high":
+                primary = self.openai_provider
+                fallback = self.gemini_provider
+            else:
+                primary = self.gemini_provider
+                fallback = self.openai_provider
+            
+            # Try primary provider
+            response = None
+            if primary:
+                try:
+                    logger.info(f"Calling primary provider (priority={priority})")
+                    response = self._call_provider(primary, prompt)
+                except LLMProviderError as e:
+                    logger.warning(f"Primary provider failed: {e}")
+                    if fallback:
+                        logger.info("Falling back to secondary provider")
+            
+            # Try fallback provider
+            if response is None and fallback:
+                try:
+                    response = self._call_provider(fallback, prompt)
+                except LLMProviderError as e:
+                    logger.error(f"Fallback provider also failed: {e}")
+                    raise LLMServiceError(f"All providers failed: {e}")
+            
+            if response is None:
+                raise LLMServiceError("No LLM providers available")
+            
+            # Parse JSON response
+            parsed = self._parse_json_response(response)
+            rewritten_bullets = parsed.get("rewritten_bullets", [])
+            
+            # Validate output
+            self._validate_bullet_count(bullets, rewritten_bullets)
+            
+            logger.info(f"Successfully rewritten {len(rewritten_bullets)} bullets")
+            return rewritten_bullets
+        
+        except LLMServiceError:
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error in rewrite_bullets: {e}", exc_info=True)
+            raise LLMServiceError(f"Rewrite failed: {e}")
+    
+    def analyze_resume_comprehensive(
+        self,
+        existing_skills: List[str],
+        target_role: str,
+        missing_skills: List[str],
+        jd_role: str,
+        jd_required_skills: List[str],
+        jd_seniority: str,
+        jd_years: int,
+        priority: Literal["high", "low"] = "high"
+    ) -> Dict[str, Any]:
+        """
+        Comprehensive single-call analysis: resume rewrite + roadmap + suggestions + resources.
+        
+        **ONE API CALL** that returns ALL analysis in one go:
+        - Rewritten resume bullets
+        - Learning roadmap
+        - Resume optimization suggestions
+        - Learning resources
+        - Interview prep questions
+        
+        Args:
+            existing_skills: Candidate's current skills
+            target_role: Target job role
+            missing_skills: Skills gap (top 3-5)
+            jd_role: Job description role
+            jd_required_skills: JD required skills
+            jd_seniority: JD seniority level
+            jd_years: Years required
+            priority: "high"=OpenAI, "low"=Gemini
+            
+        Returns:
+            Dict with all analysis results
+            
+        Raises:
+            LLMServiceError: if analysis fails
+        """
+        try:
+            # Load prompt template
+            prompt_template = load_prompt("analyze.txt")
+            
+            # Prepare context
+            existing_str = ", ".join(existing_skills[:10])
+            missing_str = ", ".join(missing_skills[:5])
+            jd_skills_str = ", ".join(jd_required_skills[:10])
+            
+            # Format prompt
+            prompt = prompt_template.format(
+                existing_skills=existing_str,
+                target_role=target_role,
+                missing_skills=missing_str,
+                jd_role=jd_role,
+                jd_required_skills=jd_skills_str,
+                jd_seniority=jd_seniority,
+                jd_years=jd_years
+            )
+            
+            logger.info(f"Comprehensive analysis for role: {target_role}")
+            
+            # Determine primary and fallback providers
+            if priority == "high":
+                primary = self.openai_provider
+                fallback = self.gemini_provider
+            else:
+                primary = self.gemini_provider
+                fallback = self.openai_provider
+            
+            # Try primary provider
+            response = None
+            if primary:
+                try:
+                    logger.info(f"Calling primary provider for comprehensive analysis (priority={priority})")
+                    response = self._call_provider(primary, prompt, temperature=0.3)
+                except LLMProviderError as e:
+                    logger.warning(f"Primary provider failed: {e}")
+                    if fallback:
+                        logger.info("Falling back to secondary provider")
+            
+            # Try fallback provider
+            if response is None and fallback:
+                try:
+                    response = self._call_provider(fallback, prompt, temperature=0.3)
+                except LLMProviderError as e:
+                    logger.error(f"Fallback provider also failed: {e}")
+                    raise LLMServiceError(f"All providers failed: {e}")
+            
+            if response is None:
+                raise LLMServiceError("No LLM providers available")
+            
+            # Parse JSON response
+            parsed = self._parse_json_response(response)
+            
+            # Validate required fields
+            required_fields = {
+                "rewritten_bullets": list,
+                "learning_roadmap": str,
+                "resume_suggestions": str,
+                "learning_resources": str,
+                "interview_prep": str
+            }
+            
+            for field, expected_type in required_fields.items():
+                if field not in parsed:
+                    raise LLMServiceError(f"Missing required field in response: {field}")
+                if not isinstance(parsed[field], expected_type):
+                    raise LLMServiceError(
+                        f"Invalid type for {field}: expected {expected_type.__name__}, "
+                        f"got {type(parsed[field]).__name__}"
+                    )
+            
+            logger.info(f"Successfully completed comprehensive analysis")
+            return parsed
+        
+        except LLMServiceError:
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error in comprehensive analysis: {e}", exc_info=True)
+            raise LLMServiceError(f"Analysis failed: {e}")
+
+
+# Singleton instance
+_llm_service: Optional[LLMService] = None
+
+
+def get_llm_service() -> LLMService:
+    """
+    Get LLM service singleton.
+    
+    Returns:
+        LLM service instance
+    """
+    global _llm_service
+    if _llm_service is None:
+        _llm_service = LLMService()
+    return _llm_service

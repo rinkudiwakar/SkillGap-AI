@@ -1,0 +1,56 @@
+# DVC Pipeline Configuration for SkillGap AI ML Pipeline
+# Stages for data processing, model training, and evaluation
+
+stages:
+  data_preprocessing:
+    cmd: python src/data/data_preprocessing.py
+    deps:
+      - data/raw
+    outs:
+      - data/interim/processed_skills.pkl
+      - data/interim/cleaned_texts.pkl
+    plots:
+      - data/interim/preprocessing_stats.json
+
+  feature_engineering:
+    cmd: python src/features/feature_engineering.py
+    deps:
+      - data/interim/processed_skills.pkl
+      - data/interim/cleaned_texts.pkl
+    outs:
+      - data/processed/resume_embeddings.npy
+      - data/processed/jd_embeddings.npy
+    metrics:
+      - data/processed/embedding_metrics.json
+
+  model_evaluation:
+    cmd: python src/model/model_Evaluation.py
+    deps:
+      - data/processed/resume_embeddings.npy
+      - data/processed/jd_embeddings.npy
+    metrics:
+      - models/evaluation_metrics.json:
+          cache: false
+    plots:
+      - models/score_distribution.json:
+          x: score
+          y: frequency
+
+  register_model:
+    cmd: python src/register/register_model.py
+    deps:
+      - models/evaluation_metrics.json
+    outs:
+      - models/production_model.pkl
+    params:
+      - params.yaml:
+          - embedding.model
+          - similarity.threshold_excellent
+
+metrics:
+  - models/evaluation_metrics.json
+  - data/processed/embedding_metrics.json
+
+plots:
+  - models/score_distribution.json
+  - data/interim/preprocessing_stats.json

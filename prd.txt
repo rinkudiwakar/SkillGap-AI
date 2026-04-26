@@ -1,0 +1,432 @@
+Skillgap AI
+Product Requirements Document (PRD)
+
+Version 1.0   |   Rinku Diwakar   |   April 2026
+1. Product Overview
+Product Name: SkillGap AI
+Type: Full-Stack AI/ML Web Application + MLOps Pipeline
+Owner: Rinku Diwakar
+Version: 1.0
+Status: Planning
+Domain name: Skillgap.ai
+
+Skillgap AI is an AI-powered web application that accepts a user's resume and a target job description (JD), converts both into dense semantic vector embeddings using sentence-transformers, and computes their cosine similarity to produce a structured, actionable intelligence report. The system goes beyond simple keyword matching — it understands the semantic meaning of skills and experience, identifies genuine gaps, estimates hiring probability, rewrites resume bullet points to align with the JD, and suggests alternate job titles where the candidate has a higher probability of success.
+
+1.1 Problem Statement
+Job seekers face three critical problems when applying for roles:
+•	They do not know whether their resume actually matches the requirements of a specific job description, beyond a gut feeling.
+•	They cannot identify which specific skills are missing and how impactful those gaps are.
+•	They do not know how to reframe their existing experience to align with what a hiring manager is looking for.
+•	They apply broadly to roles they have low probability of getting, wasting time and experiencing high rejection rates.
+
+Current tools either do simple keyword matching (ATS scanners) or are generic AI assistants that lack structured, quantified output. Skillgap AI fills this gap with a semantic ML pipeline backed by a full MLOps infrastructure.
+1.2 Target Users
+•	Final-year engineering and CS students applying for their first full-time roles
+•	Early-career professionals (0–3 years experience) pivoting between domains
+•	Anyone who wants to know their true match score before applying to a role
+1.3 Success Metrics
+Metric	Target (v1.0)
+Resume-JD match score accuracy (user-rated)	> 80% user satisfaction
+Average API response time (match pipeline)	< 8 seconds
+Bullet rewrite relevance (user-rated)	> 75% acceptance rate
+Missing skills recall	> 85% of JD-required skills identified
+Uptime (EKS deployment)	> 99%
+2. Core Concept — Semantic Matching via Embeddings
+2.1 Why Keyword Matching Fails
+Traditional ATS systems check for literal keyword overlap. A resume that says 'built predictive models using ensemble methods' would score 0 against a JD that says 'experience with XGBoost and Random Forest' — even though they describe the same skill. Skillgap AI uses semantic embeddings to solve this.
+2.2 Embedding Pipeline
+Both the resume text and the JD text are passed through the same pre-trained sentence-transformer model (all-MiniLM-L6-v2 or paraphrase-mpnet-base-v2). This converts each text into a high-dimensional dense vector (384 or 768 dimensions) that captures the semantic meaning of the content — not just the words.
+
+Figure 1 — Embedding & Cosine Similarity Pipeline
+
+  Resume Text (raw)                     Job Description (raw)
+       |                                        |
+  [PyMuPDF / pdfplumber]               [Text input / URL scrape]
+  [Section splitter]                   [spaCy NER parser]
+       |                                        |
+  Cleaned resume text              Cleaned JD text + skill list
+       |                                        |
+       +-----------> sentence-transformers <----+
+                    (all-MiniLM-L6-v2)
+                           |
+              [Resume Vector]   [JD Vector]
+                    (384-dim)    (384-dim)
+                           |
+                  cosine_similarity()
+                           |
+                   Match Score: 0.0 – 1.0
+                           |
+         +-----------------+-----------------+
+         |                 |                 |
+   Missing skills    Hire probability    Bullet rewrite
+   (set difference   (calibrated from    (LangChain +
+    + embedding       score + domain      GPT-4o-mini)
+    proximity)        benchmarks)
+
+Figure 1: End-to-end semantic matching pipeline from raw inputs to structured outputs
+2.3 Cosine Similarity Interpretation
+Cosine similarity measures the angle between two vectors in high-dimensional space. A score of 1.0 means the vectors are identical (perfect match), 0.0 means no relationship. In practice:
+Score Range	Interpretation
+0.85 – 1.00	Excellent match — strong alignment in skills, experience, and domain
+0.70 – 0.84	Good match — most requirements met, minor gaps
+0.55 – 0.69	Moderate match — meaningful experience but notable skill gaps
+0.40 – 0.54	Weak match — significant retraining or pivoting needed
+0.00 – 0.39	Poor match — different domain or career level
+2.4 Hiring Probability Calibration
+The raw cosine score is converted to a hiring probability percentage using a calibration function trained on domain-specific benchmarks. The formula accounts for:
+•	Raw cosine similarity score (primary signal)
+•	Domain category (tech, finance, healthcare — different baseline match thresholds)
+•	Seniority level match (junior JD vs senior resume inflates score; inverse deflates it)
+•	Keyword density bonus: exact matches on high-frequency JD terms add a small boost
+•	Experience years delta: penalised if resume shows significantly fewer years than JD requires
+
+Figure 2 — Hiring Probability Calibration Formula
+
+  base_prob     = sigmoid(cosine_score * 10 - 5) * 100
+
+  domain_adj    = domain_factor[detected_domain]
+                  e.g. tech: 1.0, finance: 0.92, healthcare: 0.88
+
+  seniority_adj = 1.0 if levels match
+                  0.85 if resume is junior vs senior JD
+                  1.10 if resume is senior vs junior JD (capped at 100)
+
+  keyword_boost = min(0.05, exact_keyword_overlap_ratio * 0.1)
+
+  exp_penalty   = max(0.0, (jd_years_required - resume_years) * 0.03)
+
+  hire_prob     = clamp(
+                    (base_prob * domain_adj * seniority_adj)
+                    + keyword_boost - exp_penalty,
+                    min=1, max=99
+                  )
+
+Figure 2: Calibrated hiring probability formula (values tunable via params.yaml)
+3. Feature Specification
+3.1 Core Output Features (MVP)
+Feature F1 — Missing Skills Report
+The system identifies skills mentioned in the JD that are absent from or weakly represented in the resume. Two methods are combined:
+•	Hard gap: Skills explicitly listed in JD (via spaCy NER) that do not appear in resume text at all.
+•	Soft gap: Skills present in JD whose embedding representation is semantically distant from all resume content (distance threshold configurable via params.yaml).
+Output format: ranked list of missing skills, each tagged with importance level (Critical / Important / Nice-to-have) derived from keyword frequency in the JD and position in the JD (skills appearing in the first 30% of the JD are weighted higher).
+
+Figure 3 — Missing Skills Output Format
+
+  MISSING SKILLS REPORT
+  ─────────────────────────────────────────────────
+  CRITICAL (in JD top section, high frequency):
+    [1] Kubernetes          — not found in resume
+    [2] FastAPI             — not found in resume
+
+  IMPORTANT (mentioned 2+ times in JD):
+    [3] Redis               — not found in resume
+    [4] PostgreSQL          — semantically distant
+
+  NICE TO HAVE (mentioned once, lower section):
+    [5] Terraform           — not found in resume
+
+  Skills found: Python, Docker, ML, React, AWS (5/10)
+  Skills missing: 5 of 10 required skills
+  ─────────────────────────────────────────────────
+
+Figure 3: Sample missing skills report output
+Feature F2 — Hiring Probability Score
+A single percentage displayed prominently in the UI (e.g., 73%) alongside a confidence band (±5%). Accompanied by a brief plain-English explanation of the top 3 factors that most positively and negatively impacted the score.
+Feature F3 — Resume Bullet Point Rewriter
+Each bullet point from the user's resume Experience section is individually rewritten to incorporate JD keywords, action verbs, and quantified impact language. The LangChain chain executes the following prompt template:
+
+Figure 4 — LangChain Rewrite Prompt Template
+
+  SYSTEM: You are an expert resume writer. Rewrite the
+  following resume bullet point to better align with the
+  job description requirements below. Preserve all
+  factual content and metrics. Do not invent numbers.
+  Use strong action verbs. Incorporate relevant JD
+  keywords naturally.
+
+  JD KEYWORDS: {jd_top_keywords}
+  JD ROLE: {jd_role_title}
+
+  ORIGINAL BULLET: {original_bullet}
+
+  OUTPUT: Return only the rewritten bullet. No
+  explanation. Max 2 lines.
+
+Figure 4: LangChain prompt template for bullet rewriting (stored in prompts/rewrite.txt)
+Feature F4 — Alternate Job Title Suggestions
+Based on the user's resume embedding, the system retrieves the top 5 job titles from a pre-indexed title database (stored in Pinecone/ChromaDB) whose embeddings are most similar to the resume vector. This answers: 'What roles are you best suited for right now, based on what you actually have?'
+•	Each suggested title includes: title name, estimated match probability, key matching skills, and one missing skill that would make the candidate even more competitive.
+•	Titles are sourced from a curated dataset of ~500 standardised job titles (not company-specific postings).
+3.2 Additional Features (v1.0)
+Feature F5 — Application Tracker
+A lightweight Kanban-style table backed by Supabase where users can log jobs they have applied to. Columns: Company, Role, Date Applied, Status (Applied / Interview / Offer / Rejected), Match Score at time of apply, Notes.
+Feature F6 — Resume Completeness Score
+A secondary score (0–100) that evaluates the resume independently of any JD, checking for: presence of all key sections (Summary, Skills, Experience, Education, Projects), quantified bullet points, action verb usage, LinkedIn/GitHub links, and overall length appropriateness. Displayed alongside the match score.
+Feature F7 — JD Scraper (URL input)
+Instead of pasting JD text, users can paste a LinkedIn or Indeed job URL. A Playwright/BeautifulSoup scraper extracts the JD text automatically and feeds it into the pipeline.
+Feature F8 — Match History & Trend Dashboard
+Users can save multiple resume-JD match results over time. A simple line chart (Recharts in React) shows their match score improving as they update their resume. Stored in Supabase per user account.
+Feature F9 — Cover Letter Draft
+A one-click feature that generates a tailored cover letter skeleton (3 paragraphs) using the user's resume summary, the JD role, and the identified matching skills. Uses the same LangChain + GPT-4o-mini pipeline as the bullet rewriter.
+3.3 Feature Priority Matrix
+Feature	Description	Priority
+F1 — Missing skills	Ranked list of skills from JD absent in resume	P0
+F2 — Hiring probability	Calibrated percentage with explanation	P0
+F3 — Bullet rewriter	LLM rewrites each experience bullet to match JD	P0
+F4 — Job title suggestions	Top 5 alternate titles by resume embedding similarity	P0
+F5 — Application tracker	Supabase-backed kanban table	P1
+F6 — Resume completeness	Independent resume quality score	P1
+F7 — JD URL scraper	Auto-extract JD from LinkedIn/Indeed URL	P1
+F8 — Match history	Historical trend chart of match scores	P2
+F9 — Cover letter draft	Auto-generated cover letter from resume + JD	P2
+4. System Architecture
+4.1 High-Level Architecture
+The system follows a five-layer architecture: Frontend → API Gateway → Core Services → AI/ML Engine → Data & Storage. A separate Observability layer (Prometheus + Grafana + MLflow) spans all layers.
+
+Figure 5 — System Architecture Overview
+
+  ┌──────────────────────────────────────────────────────┐
+  │          FRONTEND  (React.js + Tailwind)             │
+  │   Upload · Match Dashboard · Tracker · History       │
+  └──────────────────────┬───────────────────────────────┘
+                         │  REST / JSON
+  ┌──────────────────────▼───────────────────────────────┐
+  │     API GATEWAY  (FastAPI + JWT + Rate limiter)       │
+  │          /upload  /match  /rewrite  /titles           │
+  └───────┬──────────────┬───────────────┬───────────────┘
+          │              │               │
+  ┌───────▼──┐   ┌──────▼──────┐  ┌────▼──────────────┐
+  │  Resume  │   │  JD Parser  │  │  Rewrite Engine   │
+  │  Parser  │   │  (spaCy)    │  │  (LangChain+LLM)  │
+  │(PyMuPDF) │   │             │  │                   │
+  └───────┬──┘   └──────┬──────┘  └────┬──────────────┘
+          └──────┬───────┘              │
+  ┌──────────────▼──────────────────────▼───────────────┐
+  │            AI / ML ENGINE                           │
+  │  sentence-transformers │ cosine_similarity          │
+  │  Pinecone/ChromaDB     │ Calibration module         │
+  └──────────────────────┬───────────────────────────────┘
+          ┌──────────────┼─────────────────┐
+  ┌───────▼──┐   ┌──────▼──────┐  ┌───────▼──────────┐
+  │Supabase  │   │  AWS S3     │  │  Redis (Celery)  │
+  │(Postgres)│   │  (PDFs)     │  │  (task queue)    │
+  └──────────┘   └─────────────┘  └──────────────────┘
+
+  ── OBSERVABILITY ──────────────────────────────────────
+     Prometheus (EC2) ── Grafana (EC2) ── MLflow (Dagshub)
+
+Figure 5: Full system architecture — five layers plus observability
+4.2 Request Lifecycle
+The following describes what happens from the moment a user clicks 'Analyse' to receiving their results:
+
+Figure 6 — Request Lifecycle (Match Pipeline)
+
+  [1] User uploads resume PDF + pastes JD text → React
+  [2] React sends POST /api/match (multipart form)
+  [3] FastAPI validates JWT, saves PDF to S3
+  [4] FastAPI dispatches Celery task → Redis queue
+  [5] Celery worker picks up task:
+       (a) PyMuPDF extracts resume text
+       (b) spaCy NER parses JD → skills, role, seniority
+       (c) sentence-transformers embeds resume text
+       (d) sentence-transformers embeds JD text
+       (e) cosine_similarity() → raw score
+       (f) Calibration module → hire_prob %
+       (g) Skill gap analysis → missing skills list
+       (h) LangChain chains → bullet rewrites (async)
+       (i) Vector store query → top 5 job titles
+  [6] Results written to Supabase (results table)
+  [7] FastAPI polls result → returns JSON to React
+  [8] React renders: score card + skills + rewrites + titles
+  [9] MLflow logs: model version, score, latency
+ [10] Prometheus scrapes /metrics endpoint
+
+Figure 6: Full request lifecycle from UI click to rendered result
+4.3 Repository Structure
+Figure 7 — Repository Structure
+
+  skillgap AI-matcher/
+  ├── fastapi_app/              # Backend API
+  │   ├── main.py              # FastAPI app entry
+  │   ├── routers/             # /match /rewrite /titles
+  │   ├── services/            # resume_parser, jd_parser
+  │   ├── ml/                  # embedder, scorer, calibrator
+  │   ├── chains/              # LangChain rewrite chain
+  │   ├── requirements.txt     # pipreqs output
+  │   └── .env.example
+  ├── react_app/               # Frontend
+  │   ├── src/
+  │   │   ├── components/      # UploadForm, ScoreCard,
+  │   │   │                    # SkillsReport, BulletRewriter
+  │   │   ├── pages/           # Home, Results, Tracker
+  │   │   └── store/           # Zustand state
+  │   └── package.json
+  ├── src/                     # ML pipeline (DVC stages)
+  │   ├── data_ingestion.py
+  │   ├── data_preprocessing.py
+  │   ├── feature_engineering.py
+  │   ├── model_evaluation.py
+  │   └── register_model.py
+  ├── tests/                   # pytest unit + integration
+  ├── scripts/                 # model promotion, seed data
+  ├── notebooks/               # EDA, embedding experiments
+  ├── prompts/                 # LangChain prompt templates
+  ├── supabase/                # schema.sql
+  ├── Dockerfile               # multi-stage build
+  ├── docker-compose.yml       # local dev (api+worker+redis)
+  ├── deployment.yaml          # EKS deployment + HPA + svc
+  ├── dvc.yaml                 # pipeline stages
+  ├── params.yaml              # all thresholds + model names
+  └── .github/workflows/ci.yaml
+
+Figure 7: Repository directory structure
+5. Full Tech Stack
+Feature	Description	Priority
+React.js + Tailwind	Frontend UI — upload, results dashboard, tracker, history	Frontend
+Zustand	Client-side state management	Frontend
+FastAPI	Async Python REST API — all backend endpoints	Backend
+Celery + Redis	Background task queue — offloads heavy ML calls from API thread	Backend
+PyMuPDF + pdfplumber	Extract and structure text from uploaded resume PDFs	Backend
+spaCy (NER)	Extract skills, role title, seniority from raw JD text	Backend
+sentence-transformers	Convert resume + JD text to 384-dim semantic vectors	ML
+scikit-learn	cosine_similarity(), calibration utilities	ML
+LangChain	Orchestrate prompt → LLM → structured output chains	ML
+GPT-4o-mini (OpenAI)	LLM backend for bullet rewriting and cover letter generation	ML
+Pinecone / ChromaDB	Vector store for job title index and cached resume embeddings	ML
+MLflow + Dagshub	Experiment tracking — log model version, scores, latency	MLOps
+DVC	Data versioning — version sample datasets for offline eval	MLOps
+Supabase (PostgreSQL)	Users, sessions, match results, application tracker, history	Storage
+AWS S3	Store uploaded resume PDFs with pre-signed URL access	Storage
+Redis	Celery broker + embedding result cache (TTL: 1 hour)	Storage
+Docker + Compose	Containerise FastAPI + Celery worker + Redis locally	Infra
+GitHub Actions	CI/CD: test → build → push ECR → deploy EKS	Infra
+AWS ECR	Container image registry	Infra
+AWS EKS	Production Kubernetes cluster with HPA	Infra
+Prometheus (EC2)	Scrape /metrics — API latency, queue depth, score distribution	Observability
+Grafana (EC2)	Dashboard over Prometheus metrics	Observability
+6. Database Schema (Supabase / PostgreSQL)
+Figure 8 — Supabase Schema
+
+  -- Users (managed by Supabase Auth)
+  users (id uuid PK, email, created_at)
+
+  -- Uploaded resumes
+  resumes (
+    id          uuid PK,
+    user_id     uuid FK → users.id,
+    s3_key      text,          -- S3 object key
+    filename    text,
+    created_at  timestamp
+  )
+
+  -- Match results
+  match_results (
+    id              uuid PK,
+    user_id         uuid FK → users.id,
+    resume_id       uuid FK → resumes.id,
+    jd_text         text,
+    jd_role         text,
+    cosine_score    float,
+    hire_prob       float,
+    missing_skills  jsonb,     -- [{skill, importance}]
+    alt_titles      jsonb,     -- [{title, score}]
+    rewrites        jsonb,     -- [{original, rewritten}]
+    completeness    float,
+    created_at      timestamp
+  )
+
+  -- Application tracker
+  applications (
+    id              uuid PK,
+    user_id         uuid FK → users.id,
+    match_result_id uuid FK → match_results.id,
+    company         text,
+    role            text,
+    applied_date    date,
+    status          text,  -- Applied/Interview/Offer/Rejected
+    notes           text,
+    created_at      timestamp
+  )
+
+Figure 8: Full Supabase schema — all tables and relationships
+7. API Endpoints
+Feature	Description	Priority
+POST /api/upload	Upload resume PDF → returns resume_id + s3_key	P0
+POST /api/match	Submit resume_id + jd_text → returns task_id	P0
+GET  /api/result/{task_id}	Poll for completed match result	P0
+POST /api/rewrite	Rewrite single bullet given jd context	P0
+GET  /api/titles	Get top-5 alternate job titles for resume_id	P0
+GET  /api/history	Get all past match results for logged-in user	P1
+POST /api/tracker	Add application to tracker	P1
+PATCH /api/tracker/{id}	Update application status	P1
+GET  /health	Health check endpoint	P0
+GET  /ready	Readiness probe (Celery + Redis + DB)	P0
+GET  /metrics	Prometheus metrics scrape endpoint	P0
+8. Environment Variables
+Figure 9 — .env.example
+
+  # Application
+  APP_ENV=development
+  SECRET_KEY=your-jwt-secret
+  ALLOWED_ORIGINS=http://localhost:3000
+
+  # OpenAI
+  OPENAI_API_KEY=sk-...
+  OPENAI_MODEL=gpt-4o-mini
+
+  # Vector store
+  PINECONE_API_KEY=...
+  PINECONE_INDEX_NAME=skillgap AI-titles
+  # OR: CHROMA_PERSIST_DIR=./chroma_db  (for local dev)
+
+  # MLflow / Dagshub
+  MLFLOW_TRACKING_URI=https://dagshub.com/user/repo.mlflow
+  MLFLOW_TRACKING_USERNAME=...
+  MLFLOW_TRACKING_PASSWORD=...
+  MLFLOW_MODEL_NAME=skillgap AI-embedder
+
+  # Supabase
+  SUPABASE_URL=https://xxx.supabase.co
+  SUPABASE_SERVICE_ROLE_KEY=...
+
+  # AWS
+  AWS_ACCESS_KEY_ID=...
+  AWS_SECRET_ACCESS_KEY=...
+  AWS_DEFAULT_REGION=us-east-1
+  S3_BUCKET_NAME=skillgap AI-resumes
+
+  # Redis / Celery
+  REDIS_URL=redis://localhost:6379/0
+  CELERY_BROKER_URL=redis://localhost:6379/0
+  CELERY_RESULT_BACKEND=redis://localhost:6379/1
+
+  # Embedding model
+  EMBEDDING_MODEL=all-MiniLM-L6-v2
+  COSINE_THRESHOLD_GOOD=0.70
+  COSINE_THRESHOLD_EXCELLENT=0.85
+
+Figure 9: All environment variables required by the application
+9. Build Phases & Milestones
+Feature	Description	Priority
+Phase 1	Core ML pipeline in notebook — embeddings, cosine score, skill gap	Week 1–2
+Phase 2	FastAPI backend — PDF parse, JD parse, match endpoint, Celery/Redis	Week 3–4
+Phase 3	LLM features — bullet rewriter, title suggestions, cover letter	Week 5
+Phase 4	React frontend — upload form, score dashboard, rewrites UI, tracker	Week 6
+Phase 5	MLOps + deploy — MLflow, DVC, Docker, EKS, Prometheus, Grafana	Week 7–8
+10. Out of Scope (v1.0)
+•	Real-time job board integration (fetching live openings from LinkedIn/Indeed APIs)
+•	Resume builder / WYSIWYG editor inside the app
+•	Multi-language resume support
+•	Interview question generation
+•	Salary benchmarking
+•	Mobile native app (iOS/Android)
+
+11. Risks & Mitigations
+Risk	Mitigation
+OpenAI API cost overrun on rewrite calls	Cache rewrites in Redis (TTL 1h); rate-limit per user per day; use gpt-4o-mini (cheaper)
+Embedding model quality not sufficient	Evaluate 3 models in Phase 1 notebook (MiniLM vs MPNet vs BGE); track with MLflow
+spaCy NER misses domain-specific skills	Supplement with custom skill dictionary (tech_skills.json, curated manually)
+EKS cold start too slow for demo	Pre-warm pod with EAGER_STARTUP=true; use HPA minimum replicas = 1
+PDF parsing fails on complex layouts	Fallback: ask user to paste plain text if PyMuPDF extraction confidence < threshold
+
+— End of PRD v1.0 —

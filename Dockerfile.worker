@@ -1,0 +1,26 @@
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+
+COPY requirements-worker-docker.txt .
+
+RUN pip install --no-cache-dir --user -r requirements-worker-docker.txt
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY --from=builder /root/.local /root/.local
+
+ENV PATH=/root/.local/bin:$PATH \
+  PYTHONUNBUFFERED=1 \
+  PYTHONDONTWRITEBYTECODE=1
+
+COPY fastapi_app /app/fastapi_app
+COPY src /app/src
+COPY params.yaml /app/params.yaml
+COPY skill_expansion_cleaned.json /app/skill_expansion_cleaned.json
+
+RUN mkdir -p /app/uploads /app/logs
+
+CMD ["celery", "-A", "fastapi_app.worker", "worker", "--loglevel=info", "--concurrency=4"]

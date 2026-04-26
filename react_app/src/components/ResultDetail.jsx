@@ -1,0 +1,458 @@
+import { useState } from "react";
+import ScoreGauge from "./ScoreGauge";
+import AnalysisInsights from "./analysis/AnalysisInsights";
+
+function DetailedText({ label, text, limit = 300 }) {
+  const [showModal, setShowModal] = useState(false);
+  const isTooLong = text?.length > limit;
+  const display = text?.slice(0, limit);
+
+  return (
+    <>
+      <div className="panel" style={{ background: "rgba(255,255,255,0.02)", marginBottom: "1rem", border: "1px solid rgba(255,255,255,0.05)" }}>
+        <div className="panel-heading" style={{ marginBottom: "0.75rem" }}>
+          <div>
+            <div className="eyebrow">{label}</div>
+          </div>
+        </div>
+        <div style={{ fontSize: "0.9rem", color: "var(--text)", lineHeight: 1.8, whiteSpace: "pre-wrap", fontFamily: "var(--font-sans)" }}>
+          {display}{isTooLong && "..."}
+        </div>
+        {isTooLong && (
+          <button
+            className="btn-ghost btn-sm"
+            style={{ marginTop: "1rem", color: "var(--accent)" }}
+            onClick={() => setShowModal(true)}
+          >
+            Read More
+          </button>
+        )}
+      </div>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)} style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem", animation: "fadeSlide 0.2s ease-out"
+        }}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{
+            background: "rgba(13, 20, 38, 0.95)", border: "1px solid rgba(99,102,241,0.3)", borderRadius: "20px", maxWidth: "800px", width: "100%", maxHeight: "80vh", display: "flex", flexDirection: "column", boxShadow: "0 30px 80px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(255,255,255,0.05)", animation: "modalFade 0.25s ease-out"
+          }}>
+            <div className="modal-header" style={{ padding: "1.5rem", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "1.2rem" }}>{label}</h3>
+              </div>
+              <button className="btn-ghost btn-sm" onClick={() => setShowModal(false)} style={{ padding: "0.5rem", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%" }}>✕</button>
+            </div>
+            <div className="modal-body" style={{ padding: "1.5rem", overflowY: "auto", fontSize: "0.95rem", lineHeight: 1.8, color: "var(--text)", whiteSpace: "pre-wrap", fontFamily: "var(--font-sans)" }}>
+              {text}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function RoleHero({ role, score, matchScore, company }) {
+  // Strict truncation for the hero title to prevent JD-text leak
+  const cleanRole = role && role.length > 80 ? role.slice(0, 80) + "..." : (role || "Candidate Role");
+
+  return (
+    <div className="role-hero">
+      <div className="role-hero-content">
+        <div className="eyebrow" style={{ color: "rgba(255,255,255,0.5)" }}>Target Role Matched</div>
+        <h2 className="role-hero-title">{cleanRole}</h2>
+        <div className="role-hero-meta">
+          <span className="badge badge-indigo">AI Calibration</span>
+          {company && <span>at {company}</span>}
+          <span>•</span>
+          <span>Analysis complete</span>
+        </div>
+      </div>
+      <div className="role-hero-score">
+        <ScoreGauge score={score} size={140} />
+        <div style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "rgba(255,255,255,0.4)" }}>
+          Semantic Match: <strong style={{ color: "var(--accent)" }}>{matchScore}</strong>
+        </div>
+      </div>
+      <div className="role-hero-blur" />
+    </div>
+  );
+}
+
+// Removed SuggestedJobsList as per user request to focus on primary role and resume enhancement.
+
+function formatPercent(v) {
+  if (v == null) return "—";
+  return `${Math.round(Number(v) * 100)}%`;
+}
+
+function SkillPill({ skill, type }) {
+  return (
+    <span className={`skill-pill ${type}`}>
+      {type === "found" ? "✓" : "✗"} {skill}
+    </span>
+  );
+}
+
+function LearnBtn({ skill }) {
+  return (
+    <a
+      href={`https://www.google.com/search?q=${encodeURIComponent(skill + " tutorial")}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="learn-btn"
+    >
+      Learn
+    </a>
+  );
+}
+
+function PriorityGroup({ label, color, dot, skills }) {
+  if (!skills || skills.length === 0) return null;
+  return (
+    <div className="priority-group">
+      <div className="priority-label" style={{ color }}>
+        <span>{dot}</span> {label}
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+        {skills.map((s) => (
+          <span key={s} style={{ display: "inline-flex", alignItems: "center" }}>
+            <span className="skill-pill missing">{s}</span>
+            <LearnBtn skill={s} />
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BulletPair({ original, rewritten, index }) {
+  const jdKeywords = ["XGBoost", "Random Forest", "production", "FastAPI", "Kubernetes", "Redis", "PostgreSQL", "Docker"];
+
+  function highlightKeywords(text) {
+    if (!text) return text;
+    let result = text;
+    const parts = [];
+    let remaining = text;
+    const regex = new RegExp(`(${jdKeywords.join("|")})`, "gi");
+    const segments = text.split(regex);
+    return segments.map((seg, i) =>
+      jdKeywords.some(kw => kw.toLowerCase() === seg.toLowerCase())
+        ? <span key={i} className="kw-highlight">{seg}</span>
+        : seg
+    );
+  }
+
+  const handleCopy = () => navigator.clipboard.writeText(rewritten || "");
+
+  return (
+    <div style={{ marginBottom: "1.5rem" }}>
+      <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.6rem" }}>
+        Experience Bullet #{index + 1}
+      </div>
+      <div className="bullet-pair">
+        <div className="bullet-before">
+          <div className="bullet-label before-label">Original</div>
+          <div>{original}</div>
+        </div>
+        <div className="bullet-after">
+          <div className="bullet-label after-label">AI Rewritten ✦</div>
+          <div>{highlightKeywords(rewritten)}</div>
+        </div>
+      </div>
+      <button className="btn-ghost btn-sm btn-icon" onClick={handleCopy} style={{ fontSize: "0.8rem" }}>
+        📋 Copy rewritten bullet
+      </button>
+    </div>
+  );
+}
+
+function WaterfallRow({ label, value, maxAbs = 10 }) {
+  const isPos = value >= 0;
+  const pct = Math.min(Math.abs(value) / maxAbs * 100, 100);
+  return (
+    <div className="waterfall-row">
+      <div className="waterfall-label">{label}</div>
+      <div className="waterfall-bar-wrap">
+        <div className={`waterfall-bar ${isPos ? "pos" : "neg"}`} style={{ width: `${pct}%` }} />
+      </div>
+      <div className={`waterfall-value`} style={{ color: isPos ? "var(--green)" : "var(--red)" }}>
+        {isPos ? "+" : ""}{value}%
+      </div>
+    </div>
+  );
+}
+
+export default function ResultDetail({ result }) {
+  const [tab, setTab] = useState("overview");
+  if (!result) return null;
+
+  const score = Math.round(Number(result.hiring_probability || 0));
+  const matchScore = result.match_score != null ? Number(result.match_score).toFixed(2) : "—";
+  const completeness = result.resume_completeness_score || 82;
+
+  const foundSkills = result.found_skills || [];
+  const missingSkills = result.missing_skills || {};
+  const criticalSkills = Array.isArray(missingSkills) ? [] : (missingSkills.critical || []);
+  const importantSkills = Array.isArray(missingSkills) ? [] : (missingSkills.important || []);
+  const niceSkills = Array.isArray(missingSkills) ? [] : (missingSkills.nice_to_have || []);
+  const allMissing = Array.isArray(missingSkills) ? missingSkills : [...criticalSkills, ...importantSkills, ...niceSkills];
+
+  const bullets = result.rewritten_bullets || [];
+  const altTitles = result.alternate_job_titles || [];
+  const factors = result.score_factors || {};
+
+  const totalFound = foundSkills.length;
+  const totalMissing = allMissing.length;
+  const totalSkills = totalFound + totalMissing;
+
+  const copyAll = () => {
+    const text = bullets.map((b, i) => `${i + 1}. ${b.rewritten || b}`).join("\n");
+    navigator.clipboard.writeText(text);
+  };
+
+  const downloadTxt = () => {
+    const text = bullets.map((b, i) => `${i + 1}. ${b.rewritten || b}`).join("\n");
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "rewritten-bullets.txt"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div>
+      {/* Role Hero (New Interactive Top Component) */}
+      <RoleHero
+        role={result.jd_role}
+        score={score}
+        matchScore={matchScore}
+        company={result.company_name}
+      />
+
+      {/* Score Hero (Minimized) */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", alignItems: "start", marginBottom: "2rem" }}>
+        <div className="stack">
+          <div className="score-box" style={{ background: "rgba(99, 102, 241, 0.05)" }}>
+            <span>Resume Completeness</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+              <strong style={{ fontSize: "1.2rem" }}>{completeness}/100</strong>
+              <div className="progress-bar-wrap" style={{ flex: 1 }}>
+                <div className="progress-bar-fill" style={{ width: `${completeness}%` }} />
+              </div>
+            </div>
+          </div>
+          {result.summary && (
+            <div style={{ padding: "1.25rem", background: "rgba(255,255,255,0.02)", border: "1px solid var(--border)", borderRadius: "16px", fontSize: "0.9rem", color: "var(--muted)", lineHeight: "1.7", fontStyle: "italic" }}>
+              <div className="eyebrow" style={{ fontStyle: "normal", marginBottom: "0.5rem" }}>A-I SUMMARY</div>
+              "{result.summary}"
+            </div>
+          )}
+        </div>
+
+        <div className="panel" style={{ height: "100%" }}>
+          <div className="eyebrow" style={{ marginBottom: "1rem" }}>Top Factors</div>
+          <div className="stack" style={{ gap: "0.5rem" }}>
+            {(factors.positive || []).slice(0, 2).map((f, i) => (
+              <div key={i} className="factor-row pos">
+                <div className="factor-dot pos">▲</div>
+                <div className="factor-text">{f.label || f}</div>
+                <div className="factor-val">{f.impact ? `+${f.impact}%` : ""}</div>
+              </div>
+            ))}
+            {(factors.negative || []).slice(0, 2).map((f, i) => (
+              <div key={i} className="factor-row neg">
+                <div className="factor-dot neg">▼</div>
+                <div className="factor-text">{f.label || f}</div>
+                <div className="factor-val">{f.impact ? `−${Math.abs(f.impact)}%` : ""}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Tab Bar */}
+      <div className="tab-bar" style={{ marginBottom: "1.5rem" }}>
+        {[["overview", "Match Overview"], ["skills", "Skill Gap"], ["bullets", "Rewritten Bullets (AI Coach)"], ["insights", "🧠 AI Insights"]].map(([id, label]) => (
+          <button key={id} className={`tab-btn${tab === id ? " active" : ""}`} onClick={() => setTab(id)}>{label}</button>
+        ))}
+      </div>
+
+      {/* OVERVIEW SECTION REDESIGN */}
+      {tab === "overview" && (
+        <div className="tab-content">
+          <div className="workspace-grid" style={{ gridTemplateColumns: "1.4fr 0.6fr", gap: "2rem" }}>
+            <div className="stack">
+              <DetailedText label="Analyzed Job Description" text={result.jd_text || "No description provided."} limit={800} />
+
+              <div className="panel">
+                <div className="eyebrow" style={{ marginBottom: "1rem" }}>Actionable Insights</div>
+                <div className="stack" style={{ gap: "1rem" }}>
+                  <div style={{ display: "flex", gap: "1.5rem" }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: "0.75rem", color: "var(--muted)", marginBottom: "0.4rem" }}>Resume Suitability</div>
+                      <div className="progress-bar-wrap" style={{ height: "10px" }}>
+                        <div className="progress-bar-fill" style={{ width: `${score}%` }} />
+                      </div>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: "0.75rem", color: "var(--muted)", marginBottom: "0.4rem" }}>Market Competitiveness</div>
+                      <div className="progress-bar-wrap" style={{ height: "10px" }}>
+                        <div className="progress-bar-fill" style={{ width: `${completeness}%`, background: "var(--green)" }} />
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: "0.92rem", color: "var(--muted)", lineHeight: 1.7 }}>
+                    {result.summary ? `✦ ${result.summary}` : "Analysis complete. Switch to the Skill Gap or AI Insights tab for a deeper breakdown of your profile."}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="stack">
+              <div className="panel" style={{ background: "rgba(13, 20, 38, 0.4)" }}>
+                <div className="eyebrow" style={{ marginBottom: "1.25rem" }}>Calibration Logic</div>
+                <h4 style={{ marginBottom: "1.5rem" }}>Accuracy Factors</h4>
+                <WaterfallRow label="Primary Skill Match (70% weight)" value={78} maxAbs={80} />
+                <WaterfallRow label="Global Text Similarity (30% weight)" value={14} maxAbs={80} />
+                <WaterfallRow label="Exact Keyword Overlap bonus" value={8} maxAbs={80} />
+                <WaterfallRow label="Seniority level sync" value={2} maxAbs={80} />
+                <div style={{ borderTop: "1px solid var(--border)", paddingTop: "1rem", marginTop: "1rem", display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
+                  <span>Final Accuracy Score</span>
+                  <span style={{ color: "var(--accent)", fontFamily: "var(--font-display)", fontSize: "1.4rem" }}>{score}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SKILL GAP */}
+      {tab === "skills" && (
+        <div className="tab-content">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.5rem" }}>
+            <span style={{ color: "var(--muted)", fontSize: "0.9rem" }}>{totalSkills} skills required · {totalFound} found · {totalMissing} missing</span>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <span className="badge badge-green">{totalFound} Found</span>
+              <span className="badge badge-red">{totalMissing} Missing</span>
+            </div>
+          </div>
+          <div className="skills-split">
+            <div>
+              <div className="skills-col-header found-header">✓ Skills Found — {totalFound} of {totalSkills}</div>
+              <div className="progress-bar-wrap" style={{ marginBottom: "1rem" }}>
+                <div className="progress-bar-fill" style={{ width: `${totalSkills ? (totalFound / totalSkills) * 100 : 0}%`, background: "var(--green)" }} />
+              </div>
+              <div className="skills-found">
+                {foundSkills.length > 0 ? foundSkills.map((s) => <SkillPill key={s} skill={s} type="found" />) : <span className="muted">No skill data available.</span>}
+              </div>
+            </div>
+            <div>
+              <div className="skills-col-header missing-header">✗ Skills Missing — {totalMissing} of {totalSkills}</div>
+              <div className="progress-bar-wrap" style={{ marginBottom: "1rem" }}>
+                <div className="progress-bar-fill" style={{ width: `${totalSkills ? (totalMissing / totalSkills) * 100 : 0}%`, background: "var(--red)" }} />
+              </div>
+              {criticalSkills.length > 0 || importantSkills.length > 0 || niceSkills.length > 0 ? (
+                <>
+                  <PriorityGroup label="CRITICAL" color="var(--red)" dot="🔴" skills={criticalSkills} />
+                  <PriorityGroup label="IMPORTANT" color="var(--amber)" dot="🟡" skills={importantSkills} />
+                  <PriorityGroup label="NICE TO HAVE" color="var(--green)" dot="🟢" skills={niceSkills} />
+                </>
+              ) : (
+                allMissing.map((s) => (
+                  <span key={s} style={{ display: "inline-flex", alignItems: "center", margin: "0 0.4rem 0.4rem 0" }}>
+                    <span className="skill-pill missing">{s}</span>
+                    <LearnBtn skill={s} />
+                  </span>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BULLETS / RESUME ENHANCER */}
+      {tab === "bullets" && (
+        <div className="tab-content">
+          <div className="panel" style={{ background: "var(--accent-glow)", border: "1px solid var(--accent)", marginBottom: "2rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+              <div style={{ fontSize: "2rem" }}>🚀</div>
+              <div>
+                <h4 style={{ color: "white", marginBottom: "0.25rem" }}>Resume Enhancer (AI Coach)</h4>
+                <p style={{ fontSize: "0.88rem", color: "rgba(255,255,255,0.7)", margin: 0 }}>
+                  We've analyzed your experience against {result.jd_role && result.jd_role.length > 60 ? "the target role" : (result.jd_role || "the target role")}. Use these high-impact bullets to replace your current ones for a massive match boost.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="stack" style={{ gap: "2rem" }}>
+            {bullets.length > 0 ? (
+              bullets.map((b, i) => (
+                <div key={i} className="panel" style={{ background: "rgba(255,255,255,0.02)", position: "relative" }}>
+                  <div style={{ position: "absolute", left: "-10px", top: "20px", width: "4px", height: "40px", background: "var(--accent)", borderRadius: "2px" }} />
+                  <div className="eyebrow" style={{ marginBottom: "1rem", color: "var(--accent)" }}>Replacement Strategy #{i + 1}</div>
+                  <div style={{ fontSize: "1.1rem", lineHeight: 1.6, color: "var(--text)", fontWeight: 500, marginBottom: "1.5rem" }}>
+                    {typeof b === "string" ? b : (b.rewritten || "No content")}
+                  </div>
+                  <div style={{ display: "flex", gap: "1rem" }}>
+                    <button className="btn-primary btn-sm" onClick={() => navigator.clipboard.writeText(typeof b === "string" ? b : b.rewritten)}>
+                      📋 Copy Strategy
+                    </button>
+                    <div style={{ flex: 1, fontSize: "0.8rem", color: "var(--muted)", fontStyle: "italic", textAlign: "right" }}>
+                      Impact: Focuses on {result.found_skills?.[i % result.found_skills.length] || "key technical outcomes"}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="empty-state"><div className="empty-icon">✍️</div><p>No rewritten bullets available. Run a fresh analysis to generate coaching.</p></div>
+            )}
+          </div>
+
+          {bullets.length > 0 && (
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: "2rem", paddingTop: "2rem", borderTop: "1px solid var(--border)" }}>
+              <button className="btn-ghost btn-sm" onClick={copyAll}>📋 Copy All Rewritten Bullets</button>
+              <button className="btn-ghost btn-sm" onClick={downloadTxt}>⬇ Download Summary</button>
+            </div>
+          )}
+        </div>
+      )}
+
+
+      {/* AI INSIGHTS */}
+      {tab === "insights" && (
+        <div className="tab-content">
+          <AnalysisInsights result={result} />
+        </div>
+      )}
+
+      {/* Action Strip */}
+      <div className="action-strip">
+        <h4>What to do next</h4>
+        <div className="action-steps">
+          <div className="action-step">
+            <div className="action-step-num">Step 1</div>
+            Learn your top missing skill →
+            {allMissing[0] && <a href={`https://www.google.com/search?q=${encodeURIComponent(allMissing[0] + " tutorial")}`} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", marginLeft: "0.3rem" }}>{allMissing[0]}</a>}
+          </div>
+          <div className="action-step">
+            <div className="action-step-num">Step 2</div>
+            Update your resume with the rewritten bullets
+            {bullets.length > 0 && <button className="btn-primary btn-sm" style={{ display: "block", marginTop: "0.5rem" }} onClick={copyAll}>Copy Bullets</button>}
+          </div>
+          <div className="action-step">
+            <div className="action-step-num">Step 3</div>
+            Improve other qualified skills →
+            <a href="#skills" onClick={() => setTab("skills")} style={{ color: "var(--accent)", marginLeft: "0.3rem" }}>Skill Analysis</a>
+          </div>
+          <div className="action-step">
+            <div className="action-step-num">Step 4 — Coming Soon</div>
+            Generate a cover letter tailored to this JD
+            <span className="badge badge-amber" style={{ display: "inline-block", marginTop: "0.4rem" }}>Coming Soon</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

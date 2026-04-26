@@ -22,7 +22,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
-
+notebooks/
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -87,3 +87,22 @@ target/
 
 # Mypy cache
 .mypy_cache/
+
+# Node & React
+node_modules/
+react_app/node_modules/
+npm-debug.log
+yarn-error.log
+
+# Ensure all .env files anywhere in the tree are ignored
+**/.env
+**/.env.*
+
+# Logs
+logs/
+celery.log
+worker.log
+
+# Build files
+react_app/dist/
+fastapi_app/build/

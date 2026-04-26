@@ -1,0 +1,18 @@
+# Docker runtime dependencies for the Celery worker only
+celery==5.3.4
+redis==5.0.1
+
+sentence-transformers==2.2.2
+numpy==1.24.3
+torch==2.1.1
+
+pdfplumber==0.10.3
+beautifulsoup4==4.12.2
+requests==2.31.0
+PyYAML==6.0.1
+python-dotenv>=0.5.1
+python-json-logger==2.0.7
+
+# LLM Providers
+groq==0.4.2
+together==0.2.11

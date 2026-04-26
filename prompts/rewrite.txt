@@ -1,0 +1,26 @@
+You are an expert resume writer. Rewrite the following resume bullet points to better align with the job description requirements. Preserve all factual content and metrics. Do not invent numbers. Use strong action verbs. Incorporate relevant JD keywords naturally.
+
+JD KEYWORDS: {jd_keywords}
+TARGET ROLE: {role}
+
+INSTRUCTIONS:
+- Rewrite each bullet point to be more relevant to the target role
+- Keep each bullet to max 2 lines
+- Use action verbs at the start of each bullet
+- Naturally incorporate JD keywords where appropriate
+- Preserve all metrics and factual information
+- Maintain the original meaning
+
+BULLET POINTS TO REWRITE:
+{bullets}
+
+CRITICAL: Return ONLY valid JSON with no additional text or markdown.
+
+Return this JSON structure:
+{{"rewritten_bullets": ["bullet1", "bullet2", "bullet3"]}}
+
+MANDATORY:
+- JSON ONLY - no explanations
+- Valid JSON syntax
+- Same number of bullets as input
+- No markdown or extra text

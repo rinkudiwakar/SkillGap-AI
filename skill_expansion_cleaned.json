@@ -1,0 +1,65 @@
+{
+  "machine learning": [
+    "convolutional neural networks (cnn)",
+    "attention mechanisms",
+    "catboost"
+  ],
+  "mlops": [
+    "data validation and profiling",
+    "model versioning",
+    "feature store implementation"
+  ],
+  "scikit learn": [
+    "gradient boosting machines",
+    "random forest",
+    "t-distributed stochastic neighbor embedding"
+  ],
+  "xgboost": [
+    "coordinate descent",
+    "multi-class classification",
+    "column subsampling"
+  ],
+  "lightgbm": [
+    "gpu-accelerated training",
+    "multi-class classification",
+    "dart (dropouts meet multiple additive regression trees)"
+  ],
+  "catboost": [],
+  "feature engineering": [],
+  "model evaluation": [],
+  "hyperparameter tuning": [],
+  "deep learning": [],
+  "cnn": [],
+  "lstm": [],
+  "rnn": [],
+  "transformer architecture": [],
+  "generative ai": [
+    "direct preference optimization (dpo)",
+    "tokenization",
+    "weight initialization"
+  ],
+  "llms": [
+    "direct preference optimization (dpo)",
+    "tokenization",
+    "multi-head attention"
+  ],
+  "langchain": [],
+  "rag": [],
+  "python": [],
+  "c c++": [],
+  "javascript": [],
+  "react.js": [],
+  "flask": [],
+  "docker": [],
+  "kubernetes": [],
+  "aws": [],
+  "dvc": [],
+  "mlflow": [],
+  "github actions": [],
+  "mongodb": [],
+  "sql": [],
+  "powerbi": [],
+  "pandas": [],
+  "numpy": [],
+  "data structures algorithms": []
+}
