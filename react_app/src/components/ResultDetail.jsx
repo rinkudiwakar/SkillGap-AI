@@ -2,10 +2,120 @@ import { useState } from "react";
 import ScoreGauge from "./ScoreGauge";
 import AnalysisInsights from "./analysis/AnalysisInsights";
 
-function DetailedText({ label, text, limit = 300 }) {
+const JD_SECTION_HEADINGS = [
+  "About the Company",
+  "About Sarvam",
+  "About the Role",
+  "About Role",
+  "Responsibilities",
+  "Key Responsibilities",
+  "What You'll Do",
+  "What You Will Do",
+  "Requirements",
+  "Qualifications",
+  "Required Qualifications",
+  "Preferred Qualifications",
+  "Skills",
+  "Benefits",
+  "Why Join Us",
+  "Location",
+  "Apply for this role",
+];
+
+function cleanJobDescriptionText(text = "") {
+  return String(text)
+    .replace(/\uFFFD+/g, " ")
+    .replace(/[•●▪]/g, "\n- ")
+    .replace(/\r/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function addHeadingBreaks(text) {
+  return JD_SECTION_HEADINGS.reduce((value, heading) => {
+    const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const pattern = new RegExp(`\\s+(${escaped})(?=\\s|:|$)`, "gi");
+    return value.replace(pattern, "\n\n$1\n");
+  }, text);
+}
+
+function splitSentencesIntoParagraphs(text) {
+  const sentences = text
+    .split(/(?<=[.!?])\s+(?=[A-Z])/)
+    .map(item => item.trim())
+    .filter(Boolean);
+
+  if (sentences.length <= 2) return [text];
+
+  const paragraphs = [];
+  for (let i = 0; i < sentences.length; i += 2) {
+    paragraphs.push(sentences.slice(i, i + 2).join(" "));
+  }
+  return paragraphs;
+}
+
+function parseJobDescription(text, limit) {
+  const normalized = addHeadingBreaks(cleanJobDescriptionText(text));
+  const source = limit && normalized.length > limit ? normalized.slice(0, limit).trim() : normalized;
+  const blocks = source.split(/\n{2,}/).map(block => block.trim()).filter(Boolean);
+  const sections = [];
+  let current = { title: "Role Summary", items: [] };
+
+  blocks.forEach(block => {
+    const lines = block.split("\n").map(line => line.trim()).filter(Boolean);
+    const firstLine = lines[0] || "";
+    const isHeading = JD_SECTION_HEADINGS.some(h => h.toLowerCase() === firstLine.replace(/:$/, "").toLowerCase());
+
+    if (isHeading) {
+      if (current.items.length) sections.push(current);
+      current = { title: firstLine.replace(/:$/, ""), items: [] };
+      lines.slice(1).forEach(line => current.items.push(line));
+      return;
+    }
+
+    lines.forEach(line => {
+      if (line.startsWith("- ")) current.items.push(line);
+      else splitSentencesIntoParagraphs(line).forEach(part => current.items.push(part));
+    });
+  });
+
+  if (current.items.length) sections.push(current);
+  return { sections, isTruncated: Boolean(limit && normalized.length > limit) };
+}
+
+function JobDescriptionView({ text, limit }) {
+  const { sections, isTruncated } = parseJobDescription(text, limit);
+
+  return (
+    <div style={{ display: "grid", gap: "1rem", whiteSpace: "normal" }}>
+      {sections.map((section, sectionIndex) => (
+        <section key={`${section.title}-${sectionIndex}`}>
+          <h4 style={{ margin: "0 0 0.55rem", fontSize: "1rem", color: "var(--text)" }}>{section.title}</h4>
+          <div style={{ display: "grid", gap: "0.6rem" }}>
+            {section.items.map((item, index) => {
+              const isBullet = item.startsWith("- ");
+              if (isBullet) {
+                return (
+                  <div key={`${index}-${item.slice(0, 16)}`} style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "0.55rem", alignItems: "start", color: "var(--muted)", lineHeight: 1.7 }}>
+                    <span style={{ color: "var(--accent)", marginTop: "0.1rem" }}>-</span>
+                    <span>{item.slice(2).trim()}</span>
+                  </div>
+                );
+              }
+              return <p key={`${index}-${item.slice(0, 16)}`} style={{ margin: 0, color: "var(--muted)", lineHeight: 1.8 }}>{item}</p>;
+            })}
+          </div>
+        </section>
+      ))}
+      {isTruncated && <p style={{ margin: 0, color: "var(--accent)", fontWeight: 600 }}>Preview shortened. Open the full job description below.</p>}
+    </div>
+  );
+}
+
+function DetailedText({ label, text, sourceUrl, limit = 300 }) {
   const [showModal, setShowModal] = useState(false);
   const isTooLong = text?.length > limit;
-  const display = text?.slice(0, limit);
 
   return (
     <>
@@ -15,9 +125,17 @@ function DetailedText({ label, text, limit = 300 }) {
             <div className="eyebrow">{label}</div>
           </div>
         </div>
-        <div style={{ fontSize: "0.9rem", color: "var(--text)", lineHeight: 1.8, whiteSpace: "pre-wrap", fontFamily: "var(--font-sans)" }}>
-          {display}{isTooLong && "..."}
+        <div style={{ fontSize: "0.92rem", fontFamily: "var(--font-sans)" }}>
+          <JobDescriptionView text={text} limit={limit} />
         </div>
+        {sourceUrl && (
+          <div style={{ marginTop: "1.25rem", paddingTop: "1rem", borderTop: "1px solid var(--border)" }}>
+            <div className="eyebrow" style={{ marginBottom: "0.45rem" }}>Original Posting</div>
+            <a href={sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", fontSize: "0.9rem", lineHeight: 1.6, overflowWrap: "anywhere" }}>
+              {sourceUrl}
+            </a>
+          </div>
+        )}
         {isTooLong && (
           <button
             className="btn-ghost btn-sm"
@@ -43,7 +161,15 @@ function DetailedText({ label, text, limit = 300 }) {
               <button className="btn-ghost btn-sm" onClick={() => setShowModal(false)} style={{ padding: "0.5rem", width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%" }}>✕</button>
             </div>
             <div className="modal-body" style={{ padding: "1.5rem", overflowY: "auto", fontSize: "0.95rem", lineHeight: 1.8, color: "var(--text)", whiteSpace: "pre-wrap", fontFamily: "var(--font-sans)" }}>
-              {text}
+              <JobDescriptionView text={text} />
+              {sourceUrl && (
+                <div style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid var(--border)", whiteSpace: "normal" }}>
+                  <div className="eyebrow" style={{ marginBottom: "0.45rem" }}>Original Posting</div>
+                  <a href={sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", overflowWrap: "anywhere" }}>
+                    {sourceUrl}
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -167,9 +293,17 @@ function BulletPair({ original, rewritten, index }) {
   );
 }
 
-function WaterfallRow({ label, value, maxAbs = 10 }) {
-  const isPos = value >= 0;
-  const pct = Math.min(Math.abs(value) / maxAbs * 100, 100);
+function normalizePercent(value) {
+  if (value == null || Number.isNaN(Number(value))) return null;
+  const numeric = Number(value);
+  return Math.round(numeric <= 1 ? numeric * 100 : numeric);
+}
+
+function WaterfallRow({ label, value, maxAbs = 100 }) {
+  const displayValue = normalizePercent(value);
+  if (displayValue == null) return null;
+  const isPos = displayValue >= 0;
+  const pct = Math.min(Math.abs(displayValue) / maxAbs * 100, 100);
   return (
     <div className="waterfall-row">
       <div className="waterfall-label">{label}</div>
@@ -177,7 +311,7 @@ function WaterfallRow({ label, value, maxAbs = 10 }) {
         <div className={`waterfall-bar ${isPos ? "pos" : "neg"}`} style={{ width: `${pct}%` }} />
       </div>
       <div className={`waterfall-value`} style={{ color: isPos ? "var(--green)" : "var(--red)" }}>
-        {isPos ? "+" : ""}{value}%
+        {isPos ? "+" : ""}{displayValue}%
       </div>
     </div>
   );
@@ -205,6 +339,11 @@ export default function ResultDetail({ result }) {
   const totalFound = foundSkills.length;
   const totalMissing = allMissing.length;
   const totalSkills = totalFound + totalMissing;
+  const skillMatchScore = result.skill_match_score ?? result.granular_scores?.skill_match;
+  const semanticSimilarity = result.cosine_similarity;
+  const projectRelevance = result.project_relevance_score ?? result.granular_scores?.project_relevance;
+  const experienceRelevance = result.experience_relevance_score ?? result.granular_scores?.experience_relevance;
+  const finalAccuracyScore = normalizePercent(result.hiring_probability ?? result.match_score) ?? 0;
 
   const copyAll = () => {
     const text = bullets.map((b, i) => `${i + 1}. ${b.rewritten || b}`).join("\n");
@@ -283,7 +422,7 @@ export default function ResultDetail({ result }) {
         <div className="tab-content">
           <div className="workspace-grid" style={{ gridTemplateColumns: "1.4fr 0.6fr", gap: "2rem" }}>
             <div className="stack">
-              <DetailedText label="Analyzed Job Description" text={result.jd_text || "No description provided."} limit={800} />
+              <DetailedText label="Analyzed Job Description" text={result.jd_text || "No description provided."} sourceUrl={result.jd_source_url} limit={800} />
 
               <div className="panel">
                 <div className="eyebrow" style={{ marginBottom: "1rem" }}>Actionable Insights</div>
@@ -313,14 +452,17 @@ export default function ResultDetail({ result }) {
               <div className="panel" style={{ background: "rgba(13, 20, 38, 0.4)" }}>
                 <div className="eyebrow" style={{ marginBottom: "1.25rem" }}>Calibration Logic</div>
                 <h4 style={{ marginBottom: "1.5rem" }}>Accuracy Factors</h4>
-                <WaterfallRow label="Primary Skill Match (70% weight)" value={78} maxAbs={80} />
-                <WaterfallRow label="Global Text Similarity (30% weight)" value={14} maxAbs={80} />
-                <WaterfallRow label="Exact Keyword Overlap bonus" value={8} maxAbs={80} />
-                <WaterfallRow label="Seniority level sync" value={2} maxAbs={80} />
+                <WaterfallRow label="Primary Skill Match" value={skillMatchScore} />
+                <WaterfallRow label="Semantic Text Similarity" value={semanticSimilarity} />
+                <WaterfallRow label="Project Relevance" value={projectRelevance} />
+                <WaterfallRow label="Experience Relevance" value={experienceRelevance} />
                 <div style={{ borderTop: "1px solid var(--border)", paddingTop: "1rem", marginTop: "1rem", display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
-                  <span>Final Accuracy Score</span>
-                  <span style={{ color: "var(--accent)", fontFamily: "var(--font-display)", fontSize: "1.4rem" }}>{score}%</span>
+                  <span>Final Hiring Probability</span>
+                  <span style={{ color: "var(--accent)", fontFamily: "var(--font-display)", fontSize: "1.4rem" }}>{finalAccuracyScore}%</span>
                 </div>
+                <p style={{ color: "var(--muted)", fontSize: "0.78rem", lineHeight: 1.6, marginTop: "0.9rem" }}>
+                  Values are loaded from the saved analysis result, not hardcoded UI placeholders.
+                </p>
               </div>
             </div>
           </div>

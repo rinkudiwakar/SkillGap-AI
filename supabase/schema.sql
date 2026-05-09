@@ -58,15 +58,25 @@ CREATE TABLE IF NOT EXISTS public.match_results (
     important_missing TEXT[] DEFAULT '{}',
     nice_to_have_missing TEXT[] DEFAULT '{}',
     skill_coverage_percentage FLOAT,
+    skill_gap_report JSONB,
+    granular_scores JSONB,
     
     -- Recommendations
     alt_job_titles TEXT[] DEFAULT '{}',
+    recommended_roles JSONB DEFAULT '[]'::jsonb,
     
     -- Generated content
+    summary TEXT,
+    strengths TEXT[] DEFAULT '{}',
+    weaknesses TEXT[] DEFAULT '{}',
     roadmap TEXT,
+    rewritten_bullets JSONB DEFAULT '[]'::jsonb,
     resume_suggestions TEXT,
     learning_resources TEXT,
     interview_questions TEXT,
+    score_factors JSONB DEFAULT '{}'::jsonb,
+    resume_completeness_score FLOAT,
+    raw_result JSONB,
     
     -- Metadata
     processing_time_ms INT,
@@ -178,3 +188,15 @@ COMMENT ON TABLE public.match_history IS 'Historical match score snapshots for t
 
 ALTER TABLE public.match_results
     ADD COLUMN IF NOT EXISTS jd_source_url TEXT;
+
+ALTER TABLE public.match_results
+    ADD COLUMN IF NOT EXISTS skill_gap_report JSONB,
+    ADD COLUMN IF NOT EXISTS granular_scores JSONB,
+    ADD COLUMN IF NOT EXISTS recommended_roles JSONB DEFAULT '[]'::jsonb,
+    ADD COLUMN IF NOT EXISTS summary TEXT,
+    ADD COLUMN IF NOT EXISTS strengths TEXT[] DEFAULT '{}',
+    ADD COLUMN IF NOT EXISTS weaknesses TEXT[] DEFAULT '{}',
+    ADD COLUMN IF NOT EXISTS rewritten_bullets JSONB DEFAULT '[]'::jsonb,
+    ADD COLUMN IF NOT EXISTS score_factors JSONB DEFAULT '{}'::jsonb,
+    ADD COLUMN IF NOT EXISTS resume_completeness_score FLOAT,
+    ADD COLUMN IF NOT EXISTS raw_result JSONB;

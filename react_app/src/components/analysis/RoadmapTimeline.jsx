@@ -36,6 +36,45 @@ const STEPS = [
   },
 ];
 
+function splitActionItems(text) {
+  if (!text) return [];
+  const cleaned = String(text)
+    .replace(/\s+/g, " ")
+    .replace(/^["']|["']$/g, "")
+    .trim();
+
+  if (!cleaned) return [];
+
+  const numbered = cleaned
+    .split(/\s*(?:\d+\.|[-*])\s+/)
+    .map(item => item.trim())
+    .filter(Boolean);
+
+  if (numbered.length > 1) return numbered;
+
+  return cleaned
+    .split(/(?<=[.!?])\s+(?=[A-Z])/)
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function RoadmapText({ text, accent }) {
+  const items = splitActionItems(text);
+
+  if (items.length <= 1) return <p style={{ margin: 0 }}>{text}</p>;
+
+  return (
+    <ul style={{ margin: 0, paddingLeft: "1.1rem", display: "grid", gap: "0.55rem" }}>
+      {items.map((item, index) => (
+        <li key={`${index}-${item.slice(0, 18)}`} style={{ paddingLeft: "0.15rem" }}>
+          <span style={{ color: accent, fontWeight: 700 }}>Action {index + 1}: </span>
+          {item}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /**
  * RoadmapTimeline — displays the 30/60/90-day career roadmap as a vertical stepper.
  * Props:
@@ -169,7 +208,7 @@ export default function RoadmapTimeline({ roadmap }) {
                         whiteSpace: "pre-wrap",
                       }}
                     >
-                      {text}
+                      <RoadmapText text={text} accent={step.accent} />
                     </div>
                   </div>
                 </div>

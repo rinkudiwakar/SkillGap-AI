@@ -15,7 +15,6 @@ import LegalPage from "./pages/LegalPage";
 function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 function buildMatchInsertPayload({ userId, resumeId, jdText, jdSourceUrl, result }) {
-  // Only include columns that actually exist in the match_results DB schema
   return {
     user_id: userId, resume_id: resumeId, jd_text: jdText, jd_source_url: jdSourceUrl,
     jd_role: result.jd_role, jd_seniority_level: result.jd_seniority, jd_years_required: result.jd_years_required,
@@ -24,21 +23,56 @@ function buildMatchInsertPayload({ userId, resumeId, jdText, jdSourceUrl, result
     skill_match_score: result.granular_scores?.skill_match ?? null,
     project_relevance_score: result.granular_scores?.project_relevance ?? null,
     experience_relevance_score: result.granular_scores?.experience_relevance ?? null,
+    granular_scores: result.granular_scores || {},
     matched_skills: result.matched_skills || [], missing_skills: result.missing_skills || [],
     critical_missing: result.critical_missing || [], important_missing: result.important_missing || [],
     nice_to_have_missing: result.nice_to_have_missing || [],
     skill_coverage_percentage: result.skill_gap_report?.coverage_percentage ?? null,
-    alt_job_titles: result.alternate_titles || [], roadmap: result.roadmap || "",
-    resume_suggestions: result.resume_suggestions || "", learning_resources: result.learning_resources || "",
-    interview_questions: result.interview_questions || "", processing_time_ms: null,
+    skill_gap_report: result.skill_gap_report || {},
+    alt_job_titles: result.alternate_titles || result.alternate_job_titles || [],
+    recommended_roles: result.recommended_roles || [],
+    summary: result.summary || "",
+    strengths: result.strengths || [],
+    weaknesses: result.weaknesses || [],
+    roadmap: typeof result.roadmap === "string" ? result.roadmap : JSON.stringify(result.roadmap || {}),
     rewritten_bullets: result.rewritten_bullets || [],
+    resume_suggestions: result.resume_suggestions || "", learning_resources: result.learning_resources || "",
+    interview_questions: result.interview_questions || "",
+    score_factors: result.score_factors || {},
+    resume_completeness_score: result.resume_completeness_score ?? null,
+    raw_result: result,
+    processing_time_ms: result.processing_time_ms ?? null,
+  };
+}
+
+function normalizeStoredMatch(row) {
+  if (!row) return row;
+  const missingByPriority = {
+    critical: row.critical_missing || [],
+    important: row.important_missing || [],
+    nice_to_have: row.nice_to_have_missing || [],
+  };
+  const hasPriorityMissing = Object.values(missingByPriority).some(items => items.length > 0);
+
+  return {
+    ...row,
+    found_skills: row.found_skills || row.matched_skills || [],
+    missing_skills: hasPriorityMissing ? missingByPriority : (row.missing_skills || []),
+    alternate_job_titles: row.alternate_job_titles || row.alt_job_titles || [],
+    recommended_roles: row.recommended_roles || [],
+    rewritten_bullets: row.rewritten_bullets || [],
+    score_factors: row.score_factors || {},
+    strengths: row.strengths || [],
+    weaknesses: row.weaknesses || [],
+    summary: row.summary || row.raw_result?.summary || "",
+    resume_completeness_score: row.resume_completeness_score ?? row.raw_result?.resume_completeness_score ?? null,
   };
 }
 
 // Merges live API result into the stored Supabase row so ResultDetail can display all fields
 function mergeResultForDisplay(storedMatch, liveResult) {
   return {
-    ...storedMatch,
+    ...normalizeStoredMatch(storedMatch),
     found_skills: liveResult.found_skills || liveResult.matched_skills || [],
     rewritten_bullets: liveResult.rewritten_bullets || [],
     alternate_job_titles: liveResult.alternate_job_titles || liveResult.alternate_titles || [],
@@ -53,9 +87,22 @@ function mergeResultForDisplay(storedMatch, liveResult) {
 }
 
 // ── Initial states ────────────────────────────────────────────────────
-const authInit = { fullName: "", email: "", password: "" };
+const authInit = { fullName: "", email: "", password: "", captchaAnswer: "" };
 const profileInit = { full_name: "", email: "", profile_picture_url: "", bio: "" };
 const appInit = { company: "", role: "", url: "", applied_date: "", status: "Applied", notes: "", match_result_id: "", match_score: "" };
+
+function createCaptcha() {
+  const left = Math.floor(Math.random() * 8) + 2;
+  const right = Math.floor(Math.random() * 8) + 2;
+  return { left, right, total: left + right };
+}
+
+function getAuthErrorMessage(error) {
+  if (error?.message?.toLowerCase().includes("email not confirmed")) {
+    return "This Supabase user is still unconfirmed. Turn off email confirmation in Supabase Auth settings, then confirm or recreate this user.";
+  }
+  return error?.message || "Authentication failed.";
+}
 
 function fixRoleTitle(role, text) {
   if (!role || role === "Unknown Role") {
@@ -64,6 +111,12 @@ function fixRoleTitle(role, text) {
   }
   if (role.length > 80) return role.slice(0, 80) + "...";
   return role;
+}
+
+function getInitials(nameOrEmail) {
+  const value = nameOrEmail || "";
+  const parts = value.includes("@") ? [value[0]] : value.trim().split(/\s+/);
+  return parts.slice(0, 2).map(part => part?.[0] || "").join("").toUpperCase() || "U";
 }
 
 const DASH_TABS = [
@@ -123,13 +176,15 @@ function App() {
   const [authForm, setAuthForm] = useState(authInit);
   const [authMessage, setAuthMessage] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
-  const [bootLoading, setBootLoading] = useState(true);
+  const [captcha, setCaptcha] = useState(() => createCaptcha());
   const [showAuth, setShowAuth] = useState(false); // inline auth toggle
 
   // dashboard state
   const [activeTab, setActiveTab] = useState("analysis");
   const [profile, setProfile] = useState(profileInit);
   const [profileSaving, setProfileSaving] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const avatarInputRef = useRef(null);
   const [resumes, setResumes] = useState([]);
   const [matchResults, setMatchResults] = useState([]);
   const [applications, setApplications] = useState([]);
@@ -159,9 +214,9 @@ function App() {
 
   // ── Boot ──
   useEffect(() => {
-    if (!hasSupabaseEnv || !supabase) { setBootLoading(false); return; }
+    if (!hasSupabaseEnv || !supabase) return;
     let mounted = true;
-    supabase.auth.getSession().then(({ data: { session: s } }) => { if (mounted) { setSession(s); setBootLoading(false); } });
+    supabase.auth.getSession().then(({ data: { session: s } }) => { if (mounted) setSession(s); });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => { setSession(s); setAuthMessage(""); });
     return () => { mounted = false; subscription.unsubscribe(); };
   }, []);
@@ -191,7 +246,7 @@ function App() {
     if (pr.data) setProfile({ full_name: pr.data.full_name || "", email: pr.data.email || session?.user?.email || "", profile_picture_url: pr.data.profile_picture_url || "", bio: pr.data.bio || "" });
     else setProfile(c => ({ ...c, email: session?.user?.email || "" }));
     if (!rr.error && rr.data) { setResumes(rr.data); if (!selectedResumeId && rr.data[0]) setSelectedResumeId(rr.data[0].id); }
-    if (!mr.error && mr.data) setMatchResults(mr.data);
+    if (!mr.error && mr.data) setMatchResults(mr.data.map(normalizeStoredMatch));
     if (!ar.error && ar.data) setApplications(ar.data);
     const err = pr.error || rr.error || mr.error || ar.error;
     if (err) setAuthMessage(err.message);
@@ -200,24 +255,67 @@ function App() {
 
   async function handleAuthSubmit(e) {
     e.preventDefault();
-    if (!supabase) return;
+    if (!supabase) {
+      setAuthMessage("Authentication is not configured yet. Add Supabase values in react_app/.env.");
+      return;
+    }
+    if (Number(authForm.captchaAnswer) !== captcha.total) {
+      setAuthMessage("Security check failed. Please solve the new number check.");
+      setCaptcha(createCaptcha());
+      setAuthForm(c => ({ ...c, captchaAnswer: "" }));
+      return;
+    }
     setAuthLoading(true); setAuthMessage("");
     const action = authMode === "signin"
       ? supabase.auth.signInWithPassword({ email: authForm.email, password: authForm.password })
       : supabase.auth.signUp({ email: authForm.email, password: authForm.password, options: { data: { full_name: authForm.fullName } } });
-    const { error } = await action;
-    if (error) setAuthMessage(error.message);
-    else { setAuthMessage(authMode === "signin" ? "Signed in successfully." : "Account created. Check your email if confirmation is enabled."); if (authMode === "signin") setPage("app"); }
+    const { data, error } = await action;
+    if (error) {
+      setAuthMessage(getAuthErrorMessage(error));
+      setCaptcha(createCaptcha());
+      setAuthForm(c => ({ ...c, captchaAnswer: "" }));
+    } else {
+      setAuthMessage(authMode === "signin" ? "Signed in successfully." : "Account created successfully.");
+      setCaptcha(createCaptcha());
+      setAuthForm(authInit);
+      if (authMode === "signin" || data?.session) setPage("app");
+    }
     setAuthLoading(false);
   }
 
   async function handleProfileSave(e) {
     e.preventDefault();
+    await saveProfile(profile);
+  }
+
+  async function saveProfile(nextProfile) {
     if (!session?.user || !supabase) return;
     setProfileSaving(true); setAuthMessage("");
-    const { error } = await supabase.from("user_profiles").upsert({ id: session.user.id, email: profile.email || session.user.email || "", full_name: profile.full_name, profile_picture_url: profile.profile_picture_url, bio: profile.bio }, { onConflict: "id" });
+    const { error } = await supabase.from("user_profiles").upsert({ id: session.user.id, email: nextProfile.email || session.user.email || "", full_name: nextProfile.full_name, profile_picture_url: nextProfile.profile_picture_url, bio: nextProfile.bio }, { onConflict: "id" });
     setAuthMessage(error ? error.message : "Profile saved.");
     setProfileSaving(false);
+  }
+
+  function handleProfilePictureUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setAuthMessage("Choose an image file for your profile picture.");
+      return;
+    }
+    if (file.size > 1024 * 1024) {
+      setAuthMessage("Profile picture must be under 1MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const nextProfile = { ...profile, profile_picture_url: String(reader.result || "") };
+      setProfile(nextProfile);
+      setAccountMenuOpen(false);
+      saveProfile(nextProfile);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
   }
 
   async function handleResumeUpload(e) {
@@ -250,7 +348,8 @@ function App() {
       const payload = buildMatchInsertPayload({ userId: session.user.id, resumeId: selectedResume.id, jdText: jdInputMode === "text" ? jdText.trim() : res.result?.jd_text || "", jdSourceUrl: jdInputMode === "url" ? jdUrl.trim() : null, result: res.result });
       const { data: storedMatch, error: matchError } = await supabase.from("match_results").insert(payload).select().single();
       if (matchError) throw matchError;
-      await supabase.from("match_history").insert({ user_id: session.user.id, match_result_id: storedMatch.id, snapshot_match_score: storedMatch.match_score, snapshot_hiring_probability: storedMatch.hiring_probability, snapshot_timestamp: new Date().toISOString() });
+      const { error: historyError } = await supabase.from("match_history").insert({ user_id: session.user.id, match_result_id: storedMatch.id, snapshot_match_score: storedMatch.match_score, snapshot_hiring_probability: storedMatch.hiring_probability, snapshot_timestamp: new Date().toISOString() });
+      if (historyError) setAuthMessage(`Analysis saved, but trend snapshot failed: ${historyError.message}`);
       const displayResult = mergeResultForDisplay(storedMatch, res.result);
       setMatchResults(c => [displayResult, ...c]);
       setAnalysisResult(displayResult); setAnalysisSaving(false); setActiveTab("history");
@@ -287,7 +386,7 @@ function App() {
   async function handleSignOut() {
     if (!supabase) return;
     await supabase.auth.signOut();
-    setActiveTab("analysis"); setAnalysisResult(null); setApplicationMessage(""); setPage("home");
+    setAccountMenuOpen(false); setActiveTab("analysis"); setAnalysisResult(null); setApplicationMessage(""); setPage("home");
   }
 
   // Derived
@@ -298,15 +397,8 @@ function App() {
   const topMatch = matchResults[0];
   const averageMatch = matchResults.length > 0 ? matchResults.reduce((s, i) => s + Number(i.match_score || 0), 0) / matchResults.length : 0;
   const isAnalysing = analysisTask?.status === "pending" || analysisTask?.status === "submitting";
-
-  // ── Missing env ──
-  if (!hasSupabaseEnv) return (
-    <div className="boot-screen"><div className="boot-card"><div className="eyebrow">Setup</div><h2>Supabase env missing</h2><p className="muted">Create <code>react_app/.env</code> from <code>.env.example</code> and add VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, and VITE_API_BASE_URL.</p></div></div>
-  );
-
-  if (bootLoading) return (
-    <div className="boot-screen"><div className="boot-card"><div className="eyebrow">Loading</div><h2>Preparing your workspace.</h2><p className="muted">Connecting to Supabase…</p></div></div>
-  );
+  const displayName = profile.full_name || session?.user?.user_metadata?.full_name || session?.user?.email || "Account";
+  const avatarLabel = getInitials(displayName);
 
   const handleGetStarted = () => { if (session) { setPage("app"); } else { setShowAuth(true); setPage("auth"); } };
   const handleSignIn = () => { setPage("auth"); setShowAuth(true); };
@@ -328,16 +420,26 @@ function App() {
           <div className="eyebrow">{authMode === "signin" ? "Welcome back" : "Create account"}</div>
           <h2 style={{ marginBottom: "2rem", fontSize: "1.8rem" }}>{authMode === "signin" ? "Sign in to your workspace" : "Start building your profile"}</h2>
           <form className="auth-form" onSubmit={handleAuthSubmit}>
+            {!hasSupabaseEnv && (
+              <p className="status-note error">Auth is disabled until <code>react_app/.env</code> includes <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code>.</p>
+            )}
             {authMode === "signup" && (
               <div className="field"><label className="field-label">Full name</label><input value={authForm.fullName} onChange={e => setAuthForm(c => ({ ...c, fullName: e.target.value }))} placeholder="Aanya Sharma" required /></div>
             )}
             <div className="field"><label className="field-label">Email</label><input type="email" value={authForm.email} onChange={e => setAuthForm(c => ({ ...c, email: e.target.value }))} placeholder="you@example.com" required /></div>
             <div className="field"><label className="field-label">Password</label><input type="password" value={authForm.password} onChange={e => setAuthForm(c => ({ ...c, password: e.target.value }))} placeholder="Minimum 6 characters" required /></div>
-            <button className="btn-primary" disabled={authLoading} type="submit" style={{ width: "100%", padding: "1rem", marginTop: "0.5rem" }}>{authLoading ? "Working…" : authMode === "signin" ? "Sign In →" : "Create Account →"}</button>
+            <div className="field">
+              <label className="field-label">Security check</label>
+              <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "0.75rem", alignItems: "center" }}>
+                <div className="badge badge-indigo" style={{ minWidth: 84, justifyContent: "center" }}>{captcha.left} + {captcha.right}</div>
+                <input type="number" value={authForm.captchaAnswer} onChange={e => setAuthForm(c => ({ ...c, captchaAnswer: e.target.value }))} placeholder="Answer" required />
+              </div>
+            </div>
+            <button className="btn-primary" disabled={authLoading || !hasSupabaseEnv} type="submit" style={{ width: "100%", padding: "1rem", marginTop: "0.5rem" }}>{authLoading ? "Working…" : authMode === "signin" ? "Sign In →" : "Create Account →"}</button>
             {authMessage && <p className={`status-note${authMessage.includes("success") || authMessage.includes("created") ? " success" : " error"}`}>{authMessage}</p>}
             <div className="auth-switch">
               {authMode === "signin" ? "New here? " : "Already have an account? "}
-              <button type="button" onClick={() => setAuthMode(m => m === "signin" ? "signup" : "signin")}>{authMode === "signin" ? "Create account" : "Sign in"}</button>
+              <button type="button" onClick={() => { setAuthMode(m => m === "signin" ? "signup" : "signin"); setAuthMessage(""); setCaptcha(createCaptcha()); setAuthForm(authInit); }}>{authMode === "signin" ? "Create account" : "Sign in"}</button>
             </div>
           </form>
         </div>
@@ -379,8 +481,33 @@ function App() {
             <span className="chip">{matchResults.length} analyses</span>
             <span className="chip">{applications.length} applications</span>
           </div>
-          <span className="chip" style={{ color: "var(--muted)" }}>{session.user.email}</span>
-          <button className="btn-ghost btn-sm" onClick={handleSignOut}>Sign Out</button>
+          <div className="account-menu">
+            <button className="account-trigger" onClick={() => setAccountMenuOpen(v => !v)} type="button" aria-expanded={accountMenuOpen}>
+              <span className="account-avatar">
+                {profile.profile_picture_url ? <img src={profile.profile_picture_url} alt="" /> : avatarLabel}
+              </span>
+              <span className="account-name">{displayName}</span>
+              <span className="account-caret">v</span>
+            </button>
+            {accountMenuOpen && (
+              <div className="account-dropdown">
+                <div className="account-card-head">
+                  <span className="account-avatar large">
+                    {profile.profile_picture_url ? <img src={profile.profile_picture_url} alt="" /> : avatarLabel}
+                  </span>
+                  <div>
+                    <strong>{displayName}</strong>
+                    <span>{session.user.email}</span>
+                  </div>
+                </div>
+                <button type="button" onClick={() => avatarInputRef.current?.click()}>Upload profile picture</button>
+                <button type="button" onClick={() => { setActiveTab("profile"); setAccountMenuOpen(false); }}>Profile settings</button>
+                <button type="button" onClick={() => { setPage("home"); setAccountMenuOpen(false); }}>Go to homepage</button>
+                <button type="button" className="danger" onClick={handleSignOut}>Sign out</button>
+              </div>
+            )}
+            <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleProfilePictureUpload} style={{ display: "none" }} />
+          </div>
         </div>
       </div>
 
@@ -591,6 +718,15 @@ function App() {
             <div className="panel">
               <div className="panel-heading"><div><div className="eyebrow">Identity</div><h3>Profile Settings</h3></div></div>
               <form className="stack" onSubmit={handleProfileSave}>
+                <div className="profile-photo-editor">
+                  <span className="account-avatar large">
+                    {profile.profile_picture_url ? <img src={profile.profile_picture_url} alt="" /> : avatarLabel}
+                  </span>
+                  <div>
+                    <button className="btn-ghost btn-sm" type="button" onClick={() => avatarInputRef.current?.click()}>Upload profile picture</button>
+                    <p className="status-note" style={{ marginTop: "0.4rem" }}>JPG, PNG, or WebP image. Saved with your profile.</p>
+                  </div>
+                </div>
                 <div className="field"><label className="field-label">Full name</label><input value={profile.full_name} onChange={e => setProfile(c => ({ ...c, full_name: e.target.value }))} /></div>
                 <div className="field"><label className="field-label">Email</label><input type="email" value={profile.email} onChange={e => setProfile(c => ({ ...c, email: e.target.value }))} /></div>
                 <div className="field"><label className="field-label">Profile picture URL</label><input value={profile.profile_picture_url} onChange={e => setProfile(c => ({ ...c, profile_picture_url: e.target.value }))} placeholder="https://…" /></div>
