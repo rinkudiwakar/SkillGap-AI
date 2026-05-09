@@ -47,6 +47,16 @@ function buildMatchInsertPayload({ userId, resumeId, jdText, jdSourceUrl, result
 
 function normalizeStoredMatch(row) {
   if (!row) return row;
+
+  let roadmap = row.roadmap;
+  if (typeof roadmap === "string") {
+    try {
+      roadmap = JSON.parse(roadmap);
+    } catch {
+      roadmap = null;
+    }
+  }
+
   const missingByPriority = {
     critical: row.critical_missing || [],
     important: row.important_missing || [],
@@ -56,6 +66,7 @@ function normalizeStoredMatch(row) {
 
   return {
     ...row,
+    roadmap,
     found_skills: row.found_skills || row.matched_skills || [],
     missing_skills: hasPriorityMissing ? missingByPriority : (row.missing_skills || []),
     alternate_job_titles: row.alternate_job_titles || row.alt_job_titles || [],

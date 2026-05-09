@@ -1,222 +1,231 @@
-import { transformRoadmap } from "../../lib/transform";
-
-const STEPS = [
-  {
-    label: "30 Days",
-    key: "day30",
-    icon: "🌱",
-    accent: "var(--green)",
-    accentBg: "rgba(16,185,129,0.08)",
-    accentBorder: "rgba(16,185,129,0.25)",
-    tagColor: "var(--green)",
-    tagBg: "rgba(16,185,129,0.12)",
-    description: "Short-term goals",
-  },
-  {
-    label: "60 Days",
-    key: "day60",
-    icon: "⚡",
-    accent: "var(--amber)",
-    accentBg: "rgba(245,158,11,0.08)",
-    accentBorder: "rgba(245,158,11,0.22)",
-    tagColor: "var(--amber)",
-    tagBg: "rgba(245,158,11,0.1)",
-    description: "Mid-term milestones",
-  },
-  {
-    label: "90 Days",
-    key: "day90",
-    icon: "🚀",
-    accent: "var(--accent)",
-    accentBg: "rgba(99,102,241,0.08)",
-    accentBorder: "rgba(99,102,241,0.25)",
-    tagColor: "var(--accent)",
-    tagBg: "rgba(99,102,241,0.1)",
-    description: "Long-term achievement",
-  },
-];
-
-function splitActionItems(text) {
-  if (!text) return [];
-  const cleaned = String(text)
-    .replace(/\s+/g, " ")
-    .replace(/^["']|["']$/g, "")
-    .trim();
-
-  if (!cleaned) return [];
-
-  const numbered = cleaned
-    .split(/\s*(?:\d+\.|[-*])\s+/)
-    .map(item => item.trim())
-    .filter(Boolean);
-
-  if (numbered.length > 1) return numbered;
-
-  return cleaned
-    .split(/(?<=[.!?])\s+(?=[A-Z])/)
-    .map(item => item.trim())
-    .filter(Boolean);
-}
-
-function RoadmapText({ text, accent }) {
-  const items = splitActionItems(text);
-
-  if (items.length <= 1) return <p style={{ margin: 0 }}>{text}</p>;
-
+function ApplyNowCard({ message }) {
   return (
-    <ul style={{ margin: 0, paddingLeft: "1.1rem", display: "grid", gap: "0.55rem" }}>
-      {items.map((item, index) => (
-        <li key={`${index}-${item.slice(0, 18)}`} style={{ paddingLeft: "0.15rem" }}>
-          <span style={{ color: accent, fontWeight: 700 }}>Action {index + 1}: </span>
-          {item}
-        </li>
-      ))}
-    </ul>
+    <div className="panel" style={{ marginBottom: "1.25rem" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", marginBottom: "1rem" }}>
+        <span style={{ fontSize: "1.4rem" }}>🚀</span>
+        <div>
+          <div className="eyebrow">Readiness</div>
+          <h4 style={{ margin: 0 }}>You Are Ready to Apply</h4>
+        </div>
+      </div>
+      <div style={{
+        padding: "1.25rem",
+        background: "rgba(16,185,129,0.08)",
+        border: "1px solid rgba(16,185,129,0.25)",
+        borderRadius: 12,
+        fontSize: "0.95rem",
+        color: "var(--text)",
+        lineHeight: 1.7
+      }}>
+        {message}
+      </div>
+    </div>
   );
 }
 
-/**
- * RoadmapTimeline — displays the 30/60/90-day career roadmap as a vertical stepper.
- * Props:
- *   roadmap: object|string   — from API result (handles both key formats)
- */
-export default function RoadmapTimeline({ roadmap }) {
-  const { day30, day60, day90, hasContent } = transformRoadmap(roadmap);
-  const values = { day30, day60, day90 };
-
+function SprintPlan({ plan, estimatedTime }) {
   return (
     <div className="panel" style={{ marginBottom: "1.25rem" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", marginBottom: "1.5rem" }}>
-        <span style={{ fontSize: "1.4rem" }}>🗺️</span>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", marginBottom: "1rem" }}>
+        <span style={{ fontSize: "1.4rem" }}>⚡</span>
         <div>
-          <div className="eyebrow">Career Roadmap</div>
-          <h4 style={{ margin: 0 }}>Your 90-Day Action Plan</h4>
+          <div className="eyebrow">Sprint Plan · {estimatedTime}</div>
+          <h4 style={{ margin: 0 }}>Close the Gap Fast</h4>
         </div>
       </div>
-
-      {!hasContent ? (
-        <p
-          style={{
-            color: "var(--muted)",
-            fontSize: "0.9rem",
-            lineHeight: 1.7,
-            fontStyle: "italic",
-            padding: "0.85rem 1rem",
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid var(--border)",
-            borderRadius: 10,
-          }}
-        >
-          No roadmap was generated for this analysis. Run a fresh analysis with a job description to get a personalised action plan.
-        </p>
-      ) : (
-        <div style={{ position: "relative" }}>
-          {/* Vertical connector line */}
-          <div
-            style={{
-              position: "absolute",
-              left: 19,
-              top: 32,
-              bottom: 32,
-              width: 2,
-              background:
-                "linear-gradient(to bottom, rgba(16,185,129,0.4), rgba(245,158,11,0.4), rgba(99,102,241,0.4))",
-              borderRadius: 2,
-            }}
-          />
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-            {STEPS.map((step, i) => {
-              const text = values[step.key];
-              if (!text) return null;
-              return (
-                <div
-                  key={step.key}
-                  style={{
-                    display: "flex",
-                    gap: "1.1rem",
-                    animation: "fadeSlide 0.4s ease both",
-                    animationDelay: `${i * 120}ms`,
-                  }}
-                >
-                  {/* Step icon bubble */}
-                  <div
-                    style={{
-                      flexShrink: 0,
-                      width: 40,
-                      height: 40,
-                      borderRadius: "50%",
-                      background: step.accentBg,
-                      border: `2px solid ${step.accentBorder}`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "1.1rem",
-                      boxShadow: `0 0 16px ${step.accentBorder}`,
-                      zIndex: 1,
-                      position: "relative",
-                    }}
-                  >
-                    {step.icon}
-                  </div>
-
-                  {/* Content */}
-                  <div style={{ flex: 1, paddingTop: "0.5rem" }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.6rem",
-                        marginBottom: "0.6rem",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "0.72rem",
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.1em",
-                          padding: "0.2rem 0.65rem",
-                          borderRadius: "999px",
-                          background: step.tagBg,
-                          color: step.tagColor,
-                          border: `1px solid ${step.accentBorder}`,
-                        }}
-                      >
-                        {step.label}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: "0.75rem",
-                          color: "rgba(255,255,255,0.3)",
-                        }}
-                      >
-                        {step.description}
-                      </span>
-                    </div>
-
-                    <div
-                      style={{
-                        padding: "1rem 1.1rem",
-                        background: step.accentBg,
-                        border: `1px solid ${step.accentBorder}`,
-                        borderRadius: 12,
-                        fontSize: "0.88rem",
-                        color: "var(--text)",
-                        lineHeight: 1.75,
-                        whiteSpace: "pre-wrap",
-                      }}
-                    >
-                      <RoadmapText text={text} accent={step.accent} />
-                    </div>
-                  </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        {(plan || []).map((item, i) => (
+          <div key={i} style={{
+            padding: "1.25rem",
+            background: "rgba(99,102,241,0.06)",
+            border: "1px solid rgba(99,102,241,0.2)",
+            borderRadius: 12
+          }}>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "0.75rem",
+              flexWrap: "wrap",
+              gap: "0.5rem"
+            }}>
+              <span style={{ fontWeight: 700, fontSize: "1rem", color: "var(--accent)" }}>
+                {item.skill}
+              </span>
+              <span className="badge badge-indigo" style={{ fontSize: "0.7rem" }}>
+                ~{item.honest_time}
+              </span>
+            </div>
+            <p style={{
+              fontSize: "0.85rem",
+              color: "var(--muted)",
+              marginBottom: "0.75rem",
+              lineHeight: 1.6
+            }}>
+              {item.why_it_matters}
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <div style={{ display: "flex", gap: "0.6rem", alignItems: "flex-start", fontSize: "0.85rem" }}>
+                <span style={{ color: "var(--accent)", flexShrink: 0, marginTop: "2px" }}>📖</span>
+                <div>
+                  <span style={{ color: "var(--muted)", fontWeight: 600 }}>Resource: </span>
+                  <span style={{ color: "var(--text)" }}>{item.resource}</span>
                 </div>
-              );
-            })}
+              </div>
+              <div style={{ display: "flex", gap: "0.6rem", alignItems: "flex-start", fontSize: "0.85rem" }}>
+                <span style={{ color: "var(--green)", flexShrink: 0, marginTop: "2px" }}>🛠️</span>
+                <div>
+                  <span style={{ color: "var(--muted)", fontWeight: 600 }}>Build this: </span>
+                  <span style={{ color: "var(--text)" }}>{item.proof_of_work}</span>
+                </div>
+              </div>
+            </div>
           </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FocusedPlan({ plan, estimatedTime, priorityReason }) {
+  return (
+    <div className="panel" style={{ marginBottom: "1.25rem" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", marginBottom: "1rem" }}>
+        <span style={{ fontSize: "1.4rem" }}>🎯</span>
+        <div>
+          <div className="eyebrow">Focused Plan · {estimatedTime}</div>
+          <h4 style={{ margin: 0 }}>Priority Skill Plan</h4>
+        </div>
+      </div>
+      {priorityReason && (
+        <div style={{
+          padding: "0.85rem 1rem",
+          background: "rgba(245,158,11,0.07)",
+          border: "1px solid rgba(245,158,11,0.2)",
+          borderRadius: 10,
+          fontSize: "0.85rem",
+          color: "var(--muted)",
+          marginBottom: "1rem",
+          lineHeight: 1.6
+        }}>
+          <strong style={{ color: "var(--amber)" }}>Where to start: </strong>
+          {priorityReason}
+        </div>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+        {(plan || [])
+          .sort((a, b) => (a.priority || 0) - (b.priority || 0))
+          .map((item, i) => (
+            <div key={i} style={{
+              padding: "1.25rem",
+              background: "rgba(255,255,255,0.02)",
+              border: "1px solid var(--border)",
+              borderRadius: 12,
+              position: "relative"
+            }}>
+              <div style={{
+                position: "absolute",
+                top: "1rem",
+                right: "1rem",
+                fontFamily: "var(--font-display)",
+                fontSize: "2rem",
+                fontWeight: 700,
+                color: "rgba(255,255,255,0.06)"
+              }}>
+                {String(item.priority || i + 1).padStart(2, "0")}
+              </div>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                marginBottom: "0.65rem",
+                flexWrap: "wrap"
+              }}>
+                <span style={{ fontWeight: 700, color: "var(--text)", fontSize: "0.95rem" }}>
+                  {item.skill}
+                </span>
+                <span className="badge badge-muted" style={{ fontSize: "0.7rem" }}>
+                  ~{item.honest_time}
+                </span>
+              </div>
+              <p style={{
+                fontSize: "0.83rem",
+                color: "var(--muted)",
+                marginBottom: "0.75rem",
+                lineHeight: 1.6
+              }}>
+                {item.why_it_matters}
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                <div style={{ fontSize: "0.83rem", display: "flex", gap: "0.5rem" }}>
+                  <span style={{ flexShrink: 0 }}>📖</span>
+                  <span>
+                    <span style={{ color: "var(--muted)", fontWeight: 600 }}>Resource: </span>
+                    <span style={{ color: "var(--text)" }}>{item.resource}</span>
+                  </span>
+                </div>
+                <div style={{ fontSize: "0.83rem", display: "flex", gap: "0.5rem" }}>
+                  <span style={{ flexShrink: 0 }}>🛠️</span>
+                  <span>
+                    <span style={{ color: "var(--muted)", fontWeight: 600 }}>Build this: </span>
+                    <span style={{ color: "var(--text)" }}>{item.proof_of_work}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+}
+
+function RedirectCard({ message, betterRole }) {
+  return (
+    <div className="panel" style={{ marginBottom: "1.25rem" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", marginBottom: "1rem" }}>
+        <span style={{ fontSize: "1.4rem" }}>↩️</span>
+        <div>
+          <div className="eyebrow">Honest Assessment</div>
+          <h4 style={{ margin: 0 }}>This Role Is Not the Right Target Yet</h4>
+        </div>
+      </div>
+      <div style={{
+        padding: "1.25rem",
+        background: "rgba(239,68,68,0.06)",
+        border: "1px solid rgba(239,68,68,0.18)",
+        borderRadius: 12,
+        fontSize: "0.9rem",
+        color: "var(--text)",
+        lineHeight: 1.7,
+        marginBottom: "1rem"
+      }}>
+        {message}
+      </div>
+      {betterRole && (
+        <div style={{
+          padding: "1rem",
+          background: "rgba(16,185,129,0.06)",
+          border: "1px solid rgba(16,185,129,0.2)",
+          borderRadius: 10,
+          fontSize: "0.88rem"
+        }}>
+          <span style={{ color: "var(--muted)", fontWeight: 600 }}>Better target right now: </span>
+          <span style={{ color: "var(--green)", fontWeight: 700 }}>{betterRole}</span>
         </div>
       )}
     </div>
   );
+}
+
+export default function RoadmapTimeline({ roadmap }) {
+  if (!roadmap || typeof roadmap !== "object") return null;
+
+  const type = roadmap.type;
+
+  if (type === "apply_now") return <ApplyNowCard message={roadmap.message} />;
+  if (type === "sprint") return <SprintPlan plan={roadmap.plan} estimatedTime={roadmap.estimated_total_time} />;
+  if (type === "focused") return <FocusedPlan plan={roadmap.plan} estimatedTime={roadmap.estimated_total_time} priorityReason={roadmap.priority_order_reason} />;
+  if (type === "redirect") return <RedirectCard message={roadmap.message} betterRole={roadmap.better_target_role} />;
+
+  return null;
 }

@@ -398,15 +398,20 @@ def _execute_match_pipeline(
         # Use missing_skills capped at 5, or jd_skills if missing_skills is empty
         missing_for_analysis = missing_skills[:5] if missing_skills else jd_skills_processed[:5]
         
+        gap_count = len(missing_skills) if missing_skills else 0
+        match_score_for_prompt = int(hiring_prob) if isinstance(hiring_prob, (int, float)) else 0
+
         analysis_result = analyze_resume_comprehensive(
             existing_skills=skills_for_analysis,
             target_role=jd_data.get('role', 'target role'),
             missing_skills=missing_for_analysis,
+            gap_count=gap_count,
+            match_score=match_score_for_prompt,
             jd_role=jd_data.get('role', 'Unknown'),
             jd_required_skills=jd_skills_processed,
             jd_seniority=jd_data.get('seniority_level', 'mid'),
             jd_years=jd_data.get('years_required', 0),
-            resume_text=resume_text, # Pass raw resume
+            resume_text=resume_text,
             priority="high"
         )
         

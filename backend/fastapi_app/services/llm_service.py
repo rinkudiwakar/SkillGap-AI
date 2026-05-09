@@ -402,11 +402,13 @@ class LLMService:
         existing_skills: List[str],
         target_role: str,
         missing_skills: List[str],
+        gap_count: int,
+        match_score: int,
         jd_role: str,
         jd_required_skills: List[str],
         jd_seniority: str,
         jd_years: int,
-        resume_text: str = "", # New parameter
+        resume_text: str = "",
         priority: Literal["high", "low"] = "high"
     ) -> Dict[str, Any]:
         """
@@ -452,6 +454,8 @@ class LLMService:
                 existing_skills=existing_str,
                 target_role=target_role,
                 missing_skills=missing_str,
+                gap_count=gap_count,
+                match_score=match_score,
                 jd_role=jd_role,
                 jd_required_skills=jd_skills_str,
                 jd_seniority=jd_seniority,
@@ -490,24 +494,25 @@ class LLMService:
             required_fields = {
                 "strengths": list,
                 "weaknesses": list,
-                "missing_skills": list,
+                "rewritten_bullets": list,
                 "recommended_roles": list,
-                "rewritten_bullets": list, # New required field
-                "roadmap": dict
+                "roadmap": dict,
+                "confidence_assessment": str
             }
-            
+
             self._validate_json_structure(parsed, required_fields)
-            
-            # Validate roadmap structure
+
             roadmap = parsed.get("roadmap", {})
             if not isinstance(roadmap, dict):
                 raise LLMServiceError("roadmap must be a dictionary")
-            
-            required_roadmap_keys = {"30_days", "60_days", "90_days"}
-            roadmap_keys = set(roadmap.keys())
-            if not required_roadmap_keys.issubset(roadmap_keys):
-                missing_keys = required_roadmap_keys - roadmap_keys
-                raise LLMServiceError(f"Missing roadmap keys: {missing_keys}")
+
+            valid_roadmap_types = {"apply_now", "sprint", "focused", "redirect"}
+            roadmap_type = roadmap.get("type")
+            if roadmap_type not in valid_roadmap_types:
+                raise LLMServiceError(
+                    f"Invalid roadmap type: {roadmap_type}. "
+                    f"Must be one of {valid_roadmap_types}"
+                )
             
             logger.info("[ANALYSIS] ✅ Comprehensive analysis completed and validated")
             return parsed
