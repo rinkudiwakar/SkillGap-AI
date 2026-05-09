@@ -20,7 +20,7 @@ Install dependencies:
 npm install
 ```
 
-Create `react_app/.env` from `react_app/.env.example`:
+Create `frontend/.env` from `../env/frontend.env.example`:
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000
@@ -44,8 +44,8 @@ http://localhost:5173
 
 - FastAPI API running on `http://localhost:8000`
 - Redis and Celery worker running for `/api/match`
-- Supabase schema applied from `../supabase/schema.sql`
-- Complete analysis persistence migration applied from `../supabase/analysis_storage_migration.sql`
+- Supabase schema applied from `../backend/supabase/schema.sql`
+- Complete analysis persistence migration applied from `../backend/supabase/analysis_storage_migration.sql`
 - Root `.env` allows the Vite origin:
 
 ```env

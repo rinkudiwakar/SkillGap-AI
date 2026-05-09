@@ -16,7 +16,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile.api
+      dockerfile: backend/Dockerfile.api
     container_name: skillgap_api
     ports:
       - "8000:8000"
@@ -47,7 +47,7 @@ services:
   worker:
     build:
       context: .
-      dockerfile: Dockerfile.worker
+      dockerfile: backend/Dockerfile.worker
     container_name: skillgap_worker
     environment:
       - APP_ENV=development

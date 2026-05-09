@@ -8,9 +8,10 @@ from src.logger.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Project root
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-PROMPTS_DIR = PROJECT_ROOT / "prompts"
+# Project paths
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = BACKEND_DIR.parent if BACKEND_DIR.name == "backend" else BACKEND_DIR
+PROMPTS_DIR = PROJECT_ROOT / "ai" / "prompts"
 
 
 def load_prompt(filename: str) -> str:

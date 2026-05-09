@@ -11,12 +11,16 @@ from src.logger.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Project root
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# Project paths
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = BACKEND_DIR.parent if BACKEND_DIR.name == "backend" else BACKEND_DIR
+AI_DIR = PROJECT_ROOT / "ai"
+ENV_DIR = PROJECT_ROOT / "env"
 
 # Load .env file
-ENV_FILE = PROJECT_ROOT / ".env"
-load_dotenv(ENV_FILE)
+for ENV_FILE in (ENV_DIR / ".env", PROJECT_ROOT / ".env"):
+    if ENV_FILE.exists():
+        load_dotenv(ENV_FILE)
 
 
 class Config:
@@ -77,7 +81,7 @@ class Config:
     @classmethod
     def load_params_yaml(cls) -> Dict[str, Any]:
         """Load params.yaml configuration."""
-        params_path = PROJECT_ROOT / "params.yaml"
+        params_path = AI_DIR / "params.yaml"
         
         try:
             if params_path.exists():

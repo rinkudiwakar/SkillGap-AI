@@ -28,7 +28,9 @@ class ScoringConfig:
     
     def _load_config(self) -> Dict[str, Any]:
         """Load params.yaml."""
-        params_path = Path(__file__).parent.parent.parent / "params.yaml"
+        backend_dir = Path(__file__).resolve().parents[2]
+        project_root = backend_dir.parent if backend_dir.name == "backend" else backend_dir
+        params_path = project_root / "ai" / "params.yaml"
         try:
             with open(params_path, 'r') as f:
                 return yaml.safe_load(f) or {}

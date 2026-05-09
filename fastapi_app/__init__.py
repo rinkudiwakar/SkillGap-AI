@@ -1,1 +1,0 @@
-"""SkillGap AI backend package."""

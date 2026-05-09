@@ -11,18 +11,17 @@ __pycache__
 .coverage
 .DS_Store
 
-data
+ai/data
 docs
-local_dvc_remote
-models
-notebooks
-prompts
-react_app
-references
-reports
-scripts
-supabase
-tests
+ai/local_dvc_remote
+ai/models
+ai/notebooks
+ai/references
+ai/reports
+frontend
+env
+logs
+uploads
 
 BACKEND_IMPLEMENTATION.md
 DEPLOYMENT_GUIDE.md

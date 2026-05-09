@@ -31,15 +31,11 @@ Supabase for auth, profiles, resumes, history, and applications
 ## Repository Map
 
 ```text
-react_app/       Frontend app, public landing page, auth, dashboard
-fastapi_app/     FastAPI service and API configuration
-src/             Core data, feature, model, and visualization modules
-supabase/        Database schema and row-level security policies
-scripts/         Utility scripts for project workflows
-tests/           Test suite
-docs/            Documentation sources
-data/            Raw, interim, processed, and external data
-models/          Trained or serialized model artifacts
+frontend/        React + Vite app, public landing page, auth, dashboard
+backend/         FastAPI service, Dockerfiles, requirements, Supabase schema
+ai/              ML pipeline, prompts, DVC data, notebooks, models, tests
+docs/            Product and project documentation
+env/             Environment templates for backend and frontend
 ```
 
 ## Run Locally
@@ -47,20 +43,27 @@ models/          Trained or serialized model artifacts
 1. Create environment files from the examples:
 
 ```bash
-cp .env.example .env
-cp react_app/.env.example react_app/.env
+cp env/backend.env.example .env
+cp env/frontend.env.example frontend/.env
 ```
 
 2. Install backend dependencies:
 
 ```bash
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
+```
+
+Run backend commands from the repo root with both backend and AI packages on `PYTHONPATH`:
+
+```powershell
+$env:PYTHONPATH="backend;ai"
+uvicorn fastapi_app.main:app --reload
 ```
 
 3. Install frontend dependencies:
 
 ```bash
-cd react_app
+cd frontend
 npm install
 ```
 
@@ -78,7 +81,8 @@ http://localhost:5173
 
 ## Required Services
 
-- Supabase project with `supabase/schema.sql` applied
+- Supabase project with `backend/supabase/schema.sql` applied
+- Complete analysis persistence migration from `backend/supabase/analysis_storage_migration.sql`
 - FastAPI backend configured with the root `.env`
 - Redis and Celery worker for async matching
 - Frontend env values for `VITE_API_BASE_URL`, `VITE_SUPABASE_URL`, and `VITE_SUPABASE_ANON_KEY`

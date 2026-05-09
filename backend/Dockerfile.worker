@@ -2,7 +2,7 @@ FROM python:3.11-slim AS builder
 
 WORKDIR /build
 
-COPY requirements-worker-docker.txt .
+COPY backend/requirements-worker-docker.txt .
 
 RUN pip install --no-cache-dir --user -r requirements-worker-docker.txt
 
@@ -16,10 +16,13 @@ ENV PATH=/root/.local/bin:$PATH \
   PYTHONUNBUFFERED=1 \
   PYTHONDONTWRITEBYTECODE=1
 
-COPY fastapi_app /app/fastapi_app
-COPY src /app/src
-COPY params.yaml /app/params.yaml
-COPY skill_expansion_cleaned.json /app/skill_expansion_cleaned.json
+ENV PYTHONPATH=/app:/app/ai
+
+COPY backend/fastapi_app /app/fastapi_app
+COPY ai/src /app/ai/src
+COPY ai/prompts /app/ai/prompts
+COPY ai/params.yaml /app/ai/params.yaml
+COPY ai/skill_expansion_cleaned.json /app/ai/skill_expansion_cleaned.json
 
 RUN mkdir -p /app/uploads /app/logs
 

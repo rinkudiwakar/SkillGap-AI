@@ -256,7 +256,7 @@ function App() {
   async function handleAuthSubmit(e) {
     e.preventDefault();
     if (!supabase) {
-      setAuthMessage("Authentication is not configured yet. Add Supabase values in react_app/.env.");
+      setAuthMessage("Authentication is not configured yet. Add Supabase values in frontend/.env.");
       return;
     }
     if (Number(authForm.captchaAnswer) !== captcha.total) {
@@ -421,7 +421,7 @@ function App() {
           <h2 style={{ marginBottom: "2rem", fontSize: "1.8rem" }}>{authMode === "signin" ? "Sign in to your workspace" : "Start building your profile"}</h2>
           <form className="auth-form" onSubmit={handleAuthSubmit}>
             {!hasSupabaseEnv && (
-              <p className="status-note error">Auth is disabled until <code>react_app/.env</code> includes <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code>.</p>
+              <p className="status-note error">Auth is disabled until <code>frontend/.env</code> includes <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code>.</p>
             )}
             {authMode === "signup" && (
               <div className="field"><label className="field-label">Full name</label><input value={authForm.fullName} onChange={e => setAuthForm(c => ({ ...c, fullName: e.target.value }))} placeholder="Aanya Sharma" required /></div>

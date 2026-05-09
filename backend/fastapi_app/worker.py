@@ -8,9 +8,14 @@ from pathlib import Path
 from typing import Dict, Any, List
 import traceback
 
-# Add project root to path
-PROJECT_ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
+# Add backend and AI roots to path
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = BACKEND_DIR.parent if BACKEND_DIR.name == "backend" else BACKEND_DIR
+AI_DIR = PROJECT_ROOT / "ai"
+for path in (BACKEND_DIR, PROJECT_ROOT, AI_DIR):
+    path_str = str(path)
+    if path.exists() and path_str not in sys.path:
+        sys.path.insert(0, path_str)
 
 try:
     from celery import Celery, Task
@@ -195,7 +200,7 @@ def _execute_match_pipeline(
     
     # ===== STEP 3: Load skill expansion =====
     task_logger.info("Step 3: Loading skill expansion map")
-    skill_expansion_path = PROJECT_ROOT / "skill_expansion_cleaned.json"
+    skill_expansion_path = AI_DIR / "skill_expansion_cleaned.json"
     skill_expansion_map = load_skill_expansion_map(str(skill_expansion_path))
     use_expansion = config.USE_SKILL_EXPANSION and skill_expansion_map is not None
     

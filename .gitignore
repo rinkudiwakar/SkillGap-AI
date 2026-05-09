@@ -7,7 +7,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-env/
+.venv/
 build/
 develop-eggs/
 dist/
@@ -22,7 +22,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
-notebooks/
+ai/notebooks/
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -76,7 +76,7 @@ target/
 .ipynb_checkpoints/
 
 # exclude data from source control by default
-/data/
+/ai/data/
 
 # Mac OS-specific storage files
 .DS_Store
@@ -90,7 +90,7 @@ target/
 
 # Node & React
 node_modules/
-react_app/node_modules/
+frontend/node_modules/
 npm-debug.log
 yarn-error.log
 
@@ -104,5 +104,5 @@ celery.log
 worker.log
 
 # Build files
-react_app/dist/
-fastapi_app/build/
+frontend/dist/
+backend/fastapi_app/build/
