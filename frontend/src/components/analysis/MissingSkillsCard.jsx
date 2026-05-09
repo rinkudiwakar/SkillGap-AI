@@ -6,7 +6,16 @@ import { transformMissingSkills } from "../../lib/transform";
  *   missing_skills: string[]   — raw array from API result
  */
 export default function MissingSkillsCard({ missing_skills }) {
-  const items = Array.isArray(missing_skills) ? missing_skills : [];
+  let items = [];
+  if (Array.isArray(missing_skills)) {
+    items = missing_skills;
+  } else if (missing_skills && typeof missing_skills === "object") {
+    items = [
+      ...(missing_skills.critical || []),
+      ...(missing_skills.important || []),
+      ...(missing_skills.nice_to_have || [])
+    ];
+  }
   const sentence = transformMissingSkills(items);
   const isEmpty = items.length === 0;
 

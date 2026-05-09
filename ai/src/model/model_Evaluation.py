@@ -115,7 +115,8 @@ def hiring_probability(
     seniority_factor: float = 1.0,
     domain_factor: float = 1.0,
     seniority_level_match: bool = True,
-    is_senior_candidate_vs_junior_jd: bool = False
+    is_senior_candidate_vs_junior_jd: bool = False,
+    missing_skills_count: int = -1
 ) -> int:
     """
     Calculate hiring probability percentage.
@@ -133,13 +134,19 @@ def hiring_probability(
         domain_factor: domain-specific adjustment factor
         seniority_level_match: whether resume and JD seniority levels match
         is_senior_candidate_vs_junior_jd: whether candidate is senior but JD is junior
+        missing_skills_count: number of missing skills (to boost probability if 0)
         
     Returns:
         hiring probability as integer percentage [1, 99]
     """
     # Base probability from sigmoid calibration
-    # Base probability from sigmoid calibration
     base_prob = sigmoid(cosine_score * 10 - 2.5) * 100
+    
+    # Ensure baseline confidence if no or very few missing skills
+    if missing_skills_count == 0:
+        base_prob = max(base_prob, 85.0)
+    elif missing_skills_count == 1:
+        base_prob = max(base_prob, 70.0)
     
     # Apply domain factor
     adjusted = base_prob * domain_factor

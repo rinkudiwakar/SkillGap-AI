@@ -127,7 +127,8 @@ class Scorer:
         jd_years_required: int,
         domain: str = "tech",
         seniority_level_match: bool = True,
-        is_senior_candidate_vs_junior_jd: bool = False
+        is_senior_candidate_vs_junior_jd: bool = False,
+        missing_skills_count: int = -1
     ) -> int:
         """
         Compute hiring probability percentage.
@@ -141,6 +142,7 @@ class Scorer:
             domain: job domain (tech, finance, etc.)
             seniority_level_match: whether levels match
             is_senior_candidate_vs_junior_jd: overqualified flag
+            missing_skills_count: count of missing skills to boost probability if 0
             
         Returns:
             hiring probability percentage [1, 99]
@@ -165,7 +167,8 @@ class Scorer:
             exp_penalty_val=penalty,
             domain_factor=domain_factor,
             seniority_level_match=seniority_level_match,
-            is_senior_candidate_vs_junior_jd=is_senior_candidate_vs_junior_jd
+            is_senior_candidate_vs_junior_jd=is_senior_candidate_vs_junior_jd,
+            missing_skills_count=missing_skills_count
         )
         
         return prob

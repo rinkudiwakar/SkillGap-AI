@@ -370,7 +370,8 @@ def _execute_match_pipeline(
         jd_skills_processed,
         resume_years=jd_data.get('years_required', 0),  # Simplified
         jd_years_required=jd_data.get('years_required', 0),
-        domain='tech'
+        domain='tech',
+        missing_skills_count=len(missing_skills) if missing_skills else 0
     )
     
     task_logger.info(f"Hiring probability: {hiring_prob}%")
@@ -390,8 +391,8 @@ def _execute_match_pipeline(
     try:
         # Use resume_skills_processed if available, else fall back to JD skills as context
         skills_for_analysis = resume_skills_processed if resume_skills_processed else []
-        # Use missing_skills capped at 5, or jd_skills if missing_skills is empty
-        missing_for_analysis = missing_skills[:5] if missing_skills else jd_skills_processed[:5]
+        # Use missing_skills capped at 5. Do not fallback to JD skills if none are missing!
+        missing_for_analysis = missing_skills[:5] if missing_skills else []
         
         gap_count = len(missing_skills) if missing_skills else 0
         match_score_for_prompt = int(hiring_prob) if isinstance(hiring_prob, (int, float)) else 0
@@ -426,12 +427,50 @@ def _execute_match_pipeline(
         task_logger.warning(f"Comprehensive analysis failed: {e}")
         # Graceful fallback — these fields will be empty
     
-    # ===== STEP 10: Generate alt titles =====
-    task_logger.info("Step 10: Generating alternate job titles")
+    # ===== STEP 10: Generate alt titles and score factors =====
+    task_logger.info("Step 10: Generating alternate job titles and score factors")
     
     # Placeholder: would use vector search from Pinecone/ChromaDB
     alternate_titles = []
     
+    # Generate realistic score factors for UI based on granular scores
+    score_factors = {
+        'positive': [],
+        'negative': []
+    }
+    
+    # Define resume_years (falling back to 0 if not extractable)
+    resume_years = resume_data.get('years_experience', 0)
+    jd_years = jd_data.get('years_required', 0)
+    
+    # Add positive factors
+    if isinstance(final_weighted_score, (int, float)) and final_weighted_score > 0.75:
+        score_factors['positive'].append({'label': 'High Overall Match', 'impact': 15})
+    if isinstance(granular_scores.get('skill_match'), (int, float)) and granular_scores.get('skill_match') > 0.7:
+        score_factors['positive'].append({'label': 'Strong Skill Alignment', 'impact': 10})
+    if isinstance(granular_scores.get('experience_relevance'), (int, float)) and granular_scores.get('experience_relevance') > 0.65:
+        score_factors['positive'].append({'label': 'Relevant Experience', 'impact': 12})
+        
+    # Add Experience/Fresher specific positive weightage
+    if jd_years == 0 and resume_years == 0:
+        score_factors['positive'].append({'label': 'Entry-Level Friendly', 'impact': 8})
+    elif resume_years > jd_years:
+        score_factors['positive'].append({'label': 'Exceeds Experience Required', 'impact': 10})
+        
+    # Add negative factors
+    if missing_skills and len(missing_skills) >= 3:
+        score_factors['negative'].append({'label': 'Missing Core Skills', 'impact': -15})
+    if isinstance(granular_scores.get('project_relevance'), (int, float)) and granular_scores.get('project_relevance') < 0.4:
+        score_factors['negative'].append({'label': 'Project Mismatch', 'impact': -10})
+    if jd_years > resume_years:
+        score_factors['negative'].append({'label': 'Experience Shortfall', 'impact': -12})
+    
+    # Fallback if empty
+    if not score_factors['positive']:
+        score_factors['positive'].append({'label': 'Baseline Keyword Match', 'impact': 5})
+    if not score_factors['negative'] and missing_skills:
+        score_factors['negative'].append({'label': 'Minor Skill Gaps', 'impact': -5})
+
     # ===== RESULT =====
     result = {
         'task_id': task_id,
@@ -441,6 +480,7 @@ def _execute_match_pipeline(
         'match_score': float(final_weighted_score) if isinstance(final_weighted_score, (int, float)) else 0.0,
         'hiring_probability': int(hiring_prob) if isinstance(hiring_prob, (int, float)) else 0,
         'cosine_similarity': float(overall_cosine) if isinstance(overall_cosine, (int, float)) else 0.0,
+        'score_factors': score_factors,
         'granular_scores': {
             'skill_match': float(granular_scores.get('skill_match', 0)) if 'skill_match' in granular_scores else 0.0,
             'project_relevance': float(granular_scores.get('project_relevance', 0)) if 'project_relevance' in granular_scores else 0.0,
