@@ -3,6 +3,8 @@ import WeaknessesCard from "./WeaknessesCard";
 import MissingSkillsCard from "./MissingSkillsCard";
 import RecommendedRolesCard from "./RecommendedRolesCard";
 import RoadmapTimeline from "./RoadmapTimeline";
+import ConfidenceAssessment from "./ConfidenceAssessment";
+import RewrittenBullets from "./RewrittenBullets";
 import { hasLLMAnalysis } from "../../lib/transform";
 
 /**
@@ -61,17 +63,23 @@ export default function AnalysisInsights({ result }) {
           gap: "1.25rem",
         }}
       >
-        {/* Left column: Strengths + Weaknesses + Missing Skills */}
+        {/* Left column: Strengths + Weaknesses + Missing Skills + Confidence */}
         <div>
           <StrengthsCard strengths={result.strengths || []} />
           <WeaknessesCard weaknesses={result.weaknesses || []} />
           <MissingSkillsCard missing_skills={result.missing_skills || []} />
+          <ConfidenceAssessment
+            confidence_assessment={result.confidence_assessment || ''}
+            hiring_probability={result.hiring_probability || 0}
+            gap_count={result.missing_skills?.length || 0}
+          />
         </div>
 
-        {/* Right column: Recommended Roles + Roadmap */}
+        {/* Right column: Recommended Roles + Roadmap + Rewritten Bullets */}
         <div>
           <RecommendedRolesCard recommended_roles={result.recommended_roles || []} />
           <RoadmapTimeline roadmap={result.roadmap} />
+          <RewrittenBullets rewritten_bullets={result.rewritten_bullets || []} />
         </div>
       </div>
     </div>

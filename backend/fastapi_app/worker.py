@@ -204,23 +204,19 @@ def _execute_match_pipeline(
     skill_expansion_map = load_skill_expansion_map(str(skill_expansion_path))
     use_expansion = config.USE_SKILL_EXPANSION and skill_expansion_map is not None
     
-    # ===== API STATUS CHECK =====
+    # ===== LLM PROVIDER CHECK =====
     task_logger.info("=" * 60)
-    task_logger.info("[API STATUS] Checking LLM API configuration...")
-    if config.GITHUB_PAT:
-        task_logger.info("[API STATUS] ✅ GitHub Models API configured")
+    task_logger.info("[LLM PROVIDERS] Using Groq (PRIMARY) + Together AI (FALLBACK)")
+    groq_key = os.getenv("GROQ_API_KEY") or config.GROQ_API_KEY
+    together_key = os.getenv("TOGETHER_API_KEY") or config.TOGETHER_API_KEY
+    if groq_key:
+        task_logger.info("[LLM PROVIDERS] ✅ Groq API configured (PRIMARY)")
     else:
-        task_logger.warning("[API STATUS] ⚠️ GitHub Models API NOT configured (GITHUB_PAT missing)")
-    
-    if config.OPENAI_API_KEY:
-        task_logger.info("[API STATUS] ✅ OpenAI API configured")
+        task_logger.warning("[LLM PROVIDERS] ⚠️ Groq API NOT configured")
+    if together_key:
+        task_logger.info("[LLM PROVIDERS] ✅ Together AI API configured (FALLBACK)")
     else:
-        task_logger.warning("[API STATUS] ⚠️ OpenAI API NOT configured")
-    
-    if config.GEMINI_API_KEY:
-        task_logger.info("[API STATUS] ✅ Gemini API configured")
-    else:
-        task_logger.warning("[API STATUS] ⚠️ Gemini API NOT configured")
+        task_logger.warning("[LLM PROVIDERS] ⚠️ Together AI API NOT configured")
     task_logger.info("=" * 60)
     
     # ===== STEP 4: Process skills =====
@@ -386,9 +382,8 @@ def _execute_match_pipeline(
     weaknesses = []
     recommended_roles = []
     rewritten_bullets = []
-    roadmap_30 = ""
-    roadmap_60 = ""
-    roadmap_90 = ""
+    roadmap = {}
+    confidence_assessment = ''
     
     # Always run LLM analysis — even if no missing skills, we still need
     # strengths, recommended roles and the roadmap
@@ -420,11 +415,10 @@ def _execute_match_pipeline(
         weaknesses = analysis_result.get('weaknesses', [])
         recommended_roles = analysis_result.get('recommended_roles', [])
         rewritten_bullets = analysis_result.get('rewritten_bullets', [])
+        confidence_assessment = analysis_result.get('confidence_assessment', '')
         
+        # New roadmap format: type-based (apply_now, sprint, focused, redirect)
         roadmap = analysis_result.get('roadmap', {})
-        roadmap_30 = roadmap.get('30_days', '')
-        roadmap_60 = roadmap.get('60_days', '')
-        roadmap_90 = roadmap.get('90_days', '')
         
         task_logger.info(f"Comprehensive analysis completed: strengths={len(strengths)}, weaknesses={len(weaknesses)}, roles={len(recommended_roles)}")
     
@@ -466,12 +460,9 @@ def _execute_match_pipeline(
         'strengths': list(strengths) if strengths else [],
         'weaknesses': list(weaknesses) if weaknesses else [],
         'recommended_roles': list(recommended_roles) if recommended_roles else [],
-        'roadmap': {
-            '30_days': str(roadmap_30) if roadmap_30 else "",
-            '60_days': str(roadmap_60) if roadmap_60 else "",
-            '90_days': str(roadmap_90) if roadmap_90 else ""
-        },
+        'roadmap': roadmap if isinstance(roadmap, dict) else {},
         'rewritten_bullets': list(rewritten_bullets) if rewritten_bullets else [],
+        'confidence_assessment': str(confidence_assessment) if confidence_assessment else '',
         
         'alternate_titles': list(alternate_titles) if alternate_titles else []
     }

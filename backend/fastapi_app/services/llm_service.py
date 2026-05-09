@@ -328,20 +328,25 @@ class LLMService:
         """
         try:
             # First, try parsing directly
-            return json.loads(response)
-        except json.JSONDecodeError:
-            pass
+            result = json.loads(response)
+            logger.info(f"[ANALYSIS] Successfully parsed JSON directly")
+            return result
+        except json.JSONDecodeError as e:
+            logger.debug(f"[ANALYSIS] Direct JSON parse failed: {str(e)[:100]}")
         
         # Try to find JSON object in response
         try:
             json_match = re.search(r'\{[\s\S]*\}', response)
             if json_match:
                 json_str = json_match.group(0)
-                return json.loads(json_str)
-        except (json.JSONDecodeError, AttributeError):
-            pass
+                logger.info(f"[ANALYSIS] Found JSON object in response (length: {len(json_str)})")
+                result = json.loads(json_str)
+                logger.info(f"[ANALYSIS] Successfully parsed extracted JSON")
+                return result
+        except (json.JSONDecodeError, AttributeError) as e:
+            logger.debug(f"[ANALYSIS] Extracted JSON parse failed: {str(e)[:100]}")
         
-        logger.error(f"Failed to extract JSON from response:\n{response[:500]}")
+        logger.error(f"[ANALYSIS] Failed to extract JSON from response. Response preview:\n{response[:500]}")
         raise LLMServiceError("Could not parse JSON from LLM response")
     
     def _call_provider(
@@ -388,11 +393,18 @@ class LLMService:
         """
         for field, expected_type in required_fields.items():
             if field not in data:
-                raise LLMServiceError(f"Missing required field: {field}")
+                available_fields = list(data.keys())
+                raise LLMServiceError(
+                    f"Missing required field: {field}. Available fields: {available_fields}"
+                )
             
             if not isinstance(data[field], expected_type):
                 actual_type = type(data[field]).__name__
                 expected_name = expected_type.__name__
+                logger.warning(
+                    f"[ANALYSIS] Invalid type for '{field}': expected {expected_name}, got {actual_type}. "
+                    f"Value preview: {str(data[field])[:100]}"
+                )
                 raise LLMServiceError(
                     f"Invalid type for '{field}': expected {expected_name}, got {actual_type}"
                 )
@@ -414,30 +426,7 @@ class LLMService:
         """
         **Comprehensive single-call analysis** - ONE API call for ALL analysis.
         
-        Returns structured JSON with:
-        - strengths: list of candidate strengths
-        - weaknesses: list of areas to improve
-        - missing_skills: critical skills gap
-        - recommended_roles: alternative roles
-        - rewritten_bullets: high-impact resume improvements
-        - roadmap: 30/60/90 day learning plan
-        
-        Args:
-            existing_skills: candidate's current skills
-            target_role: target job role
-            missing_skills: skills gap (top 3-5)
-            jd_role: JD role title
-            jd_required_skills: required skills
-            jd_seniority: seniority level
-            jd_years: years of experience required
-            resume_text: raw resume content for bullet rewriting
-            priority: "high" for better quality
-            
-        Returns:
-            Dict with structured analysis
-            
-        Raises:
-            LLMServiceError: if analysis fails
+        Returns structured JSON with all analysis fields. Gracefully handles failures.
         """
         try:
             # Load and format prompt
@@ -446,8 +435,6 @@ class LLMService:
             existing_str = ", ".join(existing_skills[:10]) if existing_skills else "None"
             missing_str = ", ".join(missing_skills[:5]) if missing_skills else "None"
             jd_skills_str = ", ".join(jd_required_skills[:10]) if jd_required_skills else "None"
-            
-            # Use raw resume text snippet to keep context window safe but useful
             resume_snippet = resume_text[:4000] if resume_text else "No content"
 
             prompt = prompt_template.format(
@@ -471,7 +458,7 @@ class LLMService:
                 try:
                     logger.info("[ANALYSIS] Attempting Groq (PRIMARY)...")
                     response = self._call_provider(self.groq_provider, prompt, timeout=30)
-                    logger.info("[ANALYSIS] ✅ Groq succeeded")
+                    logger.info(f"[ANALYSIS] ✅ Groq succeeded. Response length: {len(response)}")
                 except LLMProviderError as e:
                     logger.warning(f"[ANALYSIS] Groq failed: {e}. Trying fallback...")
             
@@ -480,7 +467,7 @@ class LLMService:
                 try:
                     logger.info("[ANALYSIS] Attempting Together AI (FALLBACK)...")
                     response = self._call_provider(self.together_provider, prompt, timeout=30)
-                    logger.info("[ANALYSIS] ✅ Together AI succeeded")
+                    logger.info(f"[ANALYSIS] ✅ Together AI succeeded. Response length: {len(response)}")
                 except LLMProviderError as e:
                     logger.error(f"[ANALYSIS] Together AI also failed: {e}")
                     raise LLMServiceError(f"All providers failed: {e}")
@@ -488,34 +475,24 @@ class LLMService:
             if response is None:
                 raise LLMServiceError("No LLM providers available")
             
-            # Parse and validate JSON
-            parsed = self._extract_json_from_response(response)
+            logger.info(f"[ANALYSIS] LLM Response (first 200 chars): {response[:200]}")
             
-            required_fields = {
-                "strengths": list,
-                "weaknesses": list,
-                "rewritten_bullets": list,
-                "recommended_roles": list,
-                "roadmap": dict,
-                "confidence_assessment": str
-            }
-
-            self._validate_json_structure(parsed, required_fields)
-
-            roadmap = parsed.get("roadmap", {})
-            if not isinstance(roadmap, dict):
-                raise LLMServiceError("roadmap must be a dictionary")
-
-            valid_roadmap_types = {"apply_now", "sprint", "focused", "redirect"}
-            roadmap_type = roadmap.get("type")
-            if roadmap_type not in valid_roadmap_types:
-                raise LLMServiceError(
-                    f"Invalid roadmap type: {roadmap_type}. "
-                    f"Must be one of {valid_roadmap_types}"
-                )
+            # Parse JSON with robust error handling
+            try:
+                parsed = self._extract_json_from_response(response)
+                logger.info(f"[ANALYSIS] Successfully parsed JSON with keys: {list(parsed.keys())}")
+            except Exception as parse_error:
+                logger.error(f"[ANALYSIS] JSON parse error: {parse_error}. Response:\n{response[:500]}")
+                raise LLMServiceError(f"Failed to parse LLM response: {parse_error}")
             
-            logger.info("[ANALYSIS] ✅ Comprehensive analysis completed and validated")
-            return parsed
+            # Normalize and validate each field independently
+            try:
+                result = self._normalize_analysis_response(parsed, gap_count)
+                logger.info("[ANALYSIS] ✅ Comprehensive analysis completed and validated")
+                return result
+            except Exception as validation_error:
+                logger.error(f"[ANALYSIS] Validation error: {validation_error}", exc_info=True)
+                raise LLMServiceError(f"Response validation failed: {validation_error}")
         
         except LLMServiceError as e:
             logger.error(f"[ANALYSIS] LLM Service Error: {e}")
@@ -523,6 +500,126 @@ class LLMService:
         except Exception as e:
             logger.error(f"[ANALYSIS] Unexpected error: {e}", exc_info=True)
             raise LLMServiceError(f"Analysis failed: {e}")
+    
+    def _normalize_analysis_response(self, parsed: Dict[str, Any], gap_count: int) -> Dict[str, Any]:
+        """
+        Normalize and validate analysis response with graceful fallbacks.
+        Each field is processed independently to prevent one error from blocking everything.
+        """
+        result = {}
+        
+        # Process strengths
+        try:
+            strengths = parsed.get("strengths", [])
+            if isinstance(strengths, list):
+                result["strengths"] = [str(s).strip() for s in strengths if s]
+            else:
+                logger.warning(f"[ANALYSIS] strengths is not a list, got {type(strengths).__name__}")
+                result["strengths"] = []
+        except Exception as e:
+            logger.warning(f"[ANALYSIS] Error processing strengths: {e}")
+            result["strengths"] = []
+        
+        # Process weaknesses
+        try:
+            weaknesses = parsed.get("weaknesses", [])
+            if isinstance(weaknesses, list):
+                result["weaknesses"] = [str(w).strip() for w in weaknesses if w]
+            else:
+                logger.warning(f"[ANALYSIS] weaknesses is not a list, got {type(weaknesses).__name__}")
+                result["weaknesses"] = []
+        except Exception as e:
+            logger.warning(f"[ANALYSIS] Error processing weaknesses: {e}")
+            result["weaknesses"] = []
+        
+        # Process rewritten_bullets
+        try:
+            bullets = parsed.get("rewritten_bullets", [])
+            if isinstance(bullets, list):
+                result["rewritten_bullets"] = [str(b).strip() for b in bullets if b]
+            else:
+                logger.warning(f"[ANALYSIS] rewritten_bullets is not a list, got {type(bullets).__name__}")
+                result["rewritten_bullets"] = []
+        except Exception as e:
+            logger.warning(f"[ANALYSIS] Error processing rewritten_bullets: {e}")
+            result["rewritten_bullets"] = []
+        
+        # Process recommended_roles with flexibility
+        try:
+            roles = parsed.get("recommended_roles", [])
+            normalized_roles = []
+            
+            if isinstance(roles, list):
+                for i, role in enumerate(roles):
+                    try:
+                        if isinstance(role, str):
+                            # Legacy string format
+                            normalized_roles.append({"title": role.strip(), "reason": ""})
+                        elif isinstance(role, dict):
+                            # Object format - try multiple field names
+                            title = role.get("title") or role.get("role") or role.get("name")
+                            reason = role.get("reason") or ""
+                            if title:
+                                normalized_roles.append({"title": str(title).strip(), "reason": str(reason).strip()})
+                            else:
+                                logger.warning(f"[ANALYSIS] Role {i} has no title field: {list(role.keys())}")
+                        else:
+                            logger.warning(f"[ANALYSIS] Role {i} is invalid type {type(role).__name__}")
+                    except Exception as role_error:
+                        logger.warning(f"[ANALYSIS] Error processing role {i}: {role_error}")
+                        continue
+            else:
+                logger.warning(f"[ANALYSIS] recommended_roles is not a list, got {type(roles).__name__}")
+            
+            result["recommended_roles"] = normalized_roles
+        except Exception as e:
+            logger.warning(f"[ANALYSIS] Error processing recommended_roles: {e}")
+            result["recommended_roles"] = []
+        
+        # Process roadmap with structure validation
+        try:
+            roadmap = parsed.get("roadmap", {})
+            
+            if not isinstance(roadmap, dict):
+                logger.warning(f"[ANALYSIS] roadmap is not a dict, got {type(roadmap).__name__}")
+                result["roadmap"] = {}
+            else:
+                # Validate roadmap type
+                roadmap_type = roadmap.get("type")
+                valid_types = {"apply_now", "sprint", "focused", "redirect"}
+                
+                if roadmap_type not in valid_types:
+                    logger.warning(f"[ANALYSIS] Invalid roadmap type: {roadmap_type}, valid: {valid_types}")
+                    result["roadmap"] = {}
+                else:
+                    result["roadmap"] = roadmap
+        except Exception as e:
+            logger.warning(f"[ANALYSIS] Error processing roadmap: {e}")
+            result["roadmap"] = {}
+        
+        # Process confidence_assessment
+        try:
+            assessment = parsed.get("confidence_assessment", "")
+            if isinstance(assessment, str):
+                result["confidence_assessment"] = assessment.strip()
+            else:
+                logger.warning(f"[ANALYSIS] confidence_assessment is not a string, got {type(assessment).__name__}")
+                result["confidence_assessment"] = ""
+        except Exception as e:
+            logger.warning(f"[ANALYSIS] Error processing confidence_assessment: {e}")
+            result["confidence_assessment"] = ""
+        
+        # Log summary
+        logger.info(
+            f"[ANALYSIS] Normalized response: "
+            f"strengths={len(result.get('strengths', []))}, "
+            f"weaknesses={len(result.get('weaknesses', []))}, "
+            f"bullets={len(result.get('rewritten_bullets', []))}, "
+            f"roles={len(result.get('recommended_roles', []))}, "
+            f"roadmap_type={result.get('roadmap', {}).get('type', 'none')}"
+        )
+        
+        return result
     
     def rewrite_bullets(
         self,

@@ -57,7 +57,18 @@ export default function RecommendedRolesCard({ recommended_roles }) {
                 </div>
                 <div className="alt-info">
                   <div className="alt-title-name">{item.role}</div>
-                  <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.3rem" }}>
+                  {item.reason && (
+                    <div style={{
+                      fontSize: "0.8rem",
+                      color: "var(--muted)",
+                      marginTop: "0.35rem",
+                      marginBottom: "0.35rem",
+                      lineHeight: 1.5,
+                    }}>
+                      {item.reason}
+                    </div>
+                  )}
+                  <div style={{ display: "flex", gap: "0.5rem", marginTop: item.reason ? "0.25rem" : "0.3rem" }}>
                     <a
                       href={item.searchUrl}
                       target="_blank"

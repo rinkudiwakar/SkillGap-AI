@@ -49,7 +49,7 @@ INSTRUCTIONS FOR EACH FIELD:
 - These must be roles the candidate is qualified for TODAY based on their current skills
 - Do NOT suggest the target role if gap_count is 4 or more
 - For each role provide a title and a one-sentence rationale grounded in their actual skills
-- Format: {"title": "...", "reason": "..."}
+- Format: {{"title": "...", "reason": "..."}}
 
 "roadmap":
 You have {gap_count} missing skills: {missing_skills}
@@ -58,54 +58,54 @@ Follow these rules exactly based on gap_count:
 
 IF gap_count is 0:
 Return this structure:
-{
+{{
   "type": "apply_now",
   "message": "[One direct sentence telling them their profile matches strongly and they should apply today using the rewritten bullets above. Name the role. Do not hedge.]"
-}
+}}
 
 IF gap_count is 1 or 2:
 This is a short fix. Do NOT write a 90-day plan. Do NOT pad this out.
 Return this structure:
-{
+{{
   "type": "sprint",
   "estimated_total_time": "[Honest estimate in days, not months]",
   "plan": [
-    {
+    {{
       "skill": "[Exact missing skill name]",
       "why_it_matters": "[One sentence: why this skill specifically will affect whether they get an interview for this role]",
       "resource": "[One specific real resource — name the actual course, documentation section, or tutorial. Include the URL or platform name. Do not say 'take an online course'.]",
       "proof_of_work": "[One specific small project they can build in under a week that proves this skill. Must be something they can push to GitHub and add to their resume immediately.]",
       "honest_time": "[Realistic days to reach interview-ready level on this skill. Do not round to 30 days by default.]"
-    }
+    }}
   ]
-}
+}}
 
 IF gap_count is 3 or 4:
 Return this structure:
-{
+{{
   "type": "focused",
   "estimated_total_time": "[Honest estimate in weeks]",
   "priority_order_reason": "[One sentence explaining which missing skill will most damage their application if absent and why, so they know where to start]",
   "plan": [
-    {
+    {{
       "skill": "[Exact missing skill name]",
       "priority": [1, 2, 3, or 4 — ranked by hiring impact for this role],
       "why_it_matters": "[One sentence specific to this JD]",
       "resource": "[One specific real resource with platform or URL]",
       "proof_of_work": "[One specific buildable project that proves this skill and can go on their resume or GitHub]",
       "honest_time": "[Realistic days for this skill specifically]"
-    }
+    }}
   ]
-}
+}}
 
 IF gap_count is 5 or more:
 Do NOT write a learning plan. This role is not the right target right now.
 Return this structure:
-{
+{{
   "type": "redirect",
   "message": "[Direct honest sentence telling them they are missing too many core requirements for this specific role right now. Do not be cruel but do not sugarcoat. Tell them their time is better spent on a better-matched role.]",
   "better_target_role": "[Name one specific job title from recommended_roles that they should target instead]"
-}
+}}
 
 HARD RULES FOR ROADMAP:
 - Every resource you name must be real and specific. "Kubernetes the Hard Way by Kelsey Hightower on GitHub" is acceptable. "Learn Kubernetes online" is rejected.
@@ -126,19 +126,19 @@ HARD RULES FOR ROADMAP:
 
 RETURN EXACTLY THIS JSON STRUCTURE — NO OTHER TEXT BEFORE OR AFTER:
 
-{
+{{
   "strengths": ["...", "..."],
   "weaknesses": ["...", "..."],
   "rewritten_bullets": ["...", "..."],
   "recommended_roles": [
-    {"title": "...", "reason": "..."},
-    {"title": "...", "reason": "..."}
+    {{"title": "...", "reason": "..."}},
+    {{"title": "...", "reason": "..."}}
   ],
-  "roadmap": {
+  "roadmap": {{
     [ONE OF THE FOUR ROADMAP STRUCTURES ABOVE BASED ON gap_count]
-  },
+  }},
   "confidence_assessment": "..."
-}
+}}
 
 ABSOLUTE CONSTRAINTS — VIOLATION OF ANY OF THESE MEANS THE RESPONSE IS INVALID:
 - Return JSON only. Zero text before the opening brace. Zero text after the closing brace.
