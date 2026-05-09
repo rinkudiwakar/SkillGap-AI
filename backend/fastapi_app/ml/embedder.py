@@ -5,7 +5,7 @@ Ensures model is loaded only once per process.
 from typing import List, Optional
 from sentence_transformers import SentenceTransformer
 import numpy as np
-from src.logger.logging import get_logger
+from ai.src.logger.logging import get_logger
 
 logger = get_logger(__name__)
 

@@ -7,7 +7,7 @@ from typing import Optional, Dict, Any
 from pathlib import Path
 import yaml
 from dotenv import load_dotenv
-from src.logger.logging import get_logger
+from ai.src.logger.logging import get_logger
 
 logger = get_logger(__name__)
 

@@ -3,7 +3,7 @@ Health router - health check and readiness probe endpoints.
 """
 from typing import Dict, Any
 from fastapi import APIRouter, HTTPException, status
-from src.logger.logging import get_logger
+from ai.src.logger.logging import get_logger
 import redis
 
 logger = get_logger(__name__)

@@ -4,7 +4,7 @@ Centralizes all prompt management in /prompts directory.
 """
 from pathlib import Path
 from typing import Optional
-from src.logger.logging import get_logger
+from ai.src.logger.logging import get_logger
 
 logger = get_logger(__name__)
 

@@ -21,7 +21,7 @@ try:
     from celery import Celery, Task
     from celery.utils.log import get_task_logger
     from fastapi_app.config import get_config
-    from src.logger.logging import get_logger
+    from ai.src.logger.logging import get_logger
 except Exception as e:
     print(f"CRITICAL: Failed to import Celery modules: {e}")
     print(traceback.format_exc())
@@ -130,13 +130,13 @@ def _execute_match_pipeline(
     
     # Import here to avoid circular dependencies and to catch import errors
     try:
-        from src.data.data_preprocessing import (
+        from ai.src.data.data_preprocessing import (
             clean_text,
             process_resume_skills,
             process_jd_skills,
             load_skill_expansion_map
         )
-        from src.features.feature_engineering import (
+        from ai.src.features.feature_engineering import (
             build_resume_overall_text,
             build_resume_skills_text,
             build_resume_projects_text,
@@ -145,7 +145,7 @@ def _execute_match_pipeline(
             build_jd_skills_text,
             build_jd_role_text
         )
-        from src.model.model_Evaluation import (
+        from ai.src.model.model_Evaluation import (
             cosine_distance,
             compute_granular_scores,
             compute_final_weighted_score,

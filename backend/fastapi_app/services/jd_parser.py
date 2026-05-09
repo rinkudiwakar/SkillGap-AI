@@ -8,7 +8,7 @@ import json
 import time
 from bs4 import BeautifulSoup
 from fastapi_app.config import get_config
-from src.logger.logging import get_logger
+from ai.src.logger.logging import get_logger
 
 logger = get_logger(__name__)
 

@@ -2,9 +2,9 @@
 Matcher module - hybrid skill matching combining exact and semantic matching.
 """
 from typing import List, Tuple
-from src.model.model_Evaluation import get_skill_match
+from ai.src.model.model_Evaluation import get_skill_match
 from fastapi_app.ml.embedder import get_embedder
-from src.logger.logging import get_logger
+from ai.src.logger.logging import get_logger
 
 logger = get_logger(__name__)
 

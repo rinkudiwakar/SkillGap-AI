@@ -4,7 +4,7 @@ Utility functions for SkillGap AI.
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 import json
-from src.logger.logging import get_logger
+from ai.src.logger.logging import get_logger
 
 logger = get_logger(__name__)
 

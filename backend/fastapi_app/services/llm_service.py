@@ -16,7 +16,7 @@ import requests
 
 from fastapi_app.config import get_config
 from fastapi_app.utils.prompt_loader import load_prompt
-from src.logger.logging import get_logger
+from ai.src.logger.logging import get_logger
 
 logger = get_logger(__name__)
 

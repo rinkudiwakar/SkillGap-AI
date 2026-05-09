@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 import uuid
 from fastapi_app.worker import match_pipeline
 from fastapi_app.services.jd_parser import fetch_job_description_from_url
-from src.logger.logging import get_logger
+from ai.src.logger.logging import get_logger
 
 logger = get_logger(__name__)
 

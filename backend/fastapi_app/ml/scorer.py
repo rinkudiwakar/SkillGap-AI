@@ -4,7 +4,7 @@ Scorer module - wraps scoring functions from model_evaluation with configuration
 from typing import Dict, Any
 import yaml
 from pathlib import Path
-from src.model.model_Evaluation import (
+from ai.src.model.model_Evaluation import (
     cosine_distance,
     keyword_boost,
     experience_penalty,
@@ -14,7 +14,7 @@ from src.model.model_Evaluation import (
     rank_job_titles
 )
 from fastapi_app.ml.embedder import get_embedder
-from src.logger.logging import get_logger
+from ai.src.logger.logging import get_logger
 
 logger = get_logger(__name__)
 

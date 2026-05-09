@@ -6,7 +6,7 @@ import requests
 import json
 import time
 from fastapi_app.config import get_config
-from src.logger.logging import get_logger
+from ai.src.logger.logging import get_logger
 from fastapi_app.services.llm_service import get_llm_service, LLMServiceError
 
 logger = get_logger(__name__)

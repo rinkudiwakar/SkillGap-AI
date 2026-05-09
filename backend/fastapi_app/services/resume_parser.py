@@ -3,7 +3,7 @@ Resume parser service - extracts text and structure from PDF resumes.
 """
 from typing import Optional, Dict, Any
 import pdfplumber
-from src.logger.logging import get_logger
+from ai.src.logger.logging import get_logger
 
 logger = get_logger(__name__)
 

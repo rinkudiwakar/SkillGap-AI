@@ -10,7 +10,7 @@ import logging
 
 from fastapi_app.config import get_config
 from fastapi_app.routers import match, upload, health
-from src.logger.logging import configure_logging
+from ai.src.logger.logging import configure_logging
 
 # Configure logging
 configure_logging()

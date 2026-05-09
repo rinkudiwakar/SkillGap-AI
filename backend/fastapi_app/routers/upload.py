@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 import shutil
 from fastapi_app.services.resume_parser import process_resume_pdf
-from src.logger.logging import get_logger
+from ai.src.logger.logging import get_logger
 
 logger = get_logger(__name__)
 
