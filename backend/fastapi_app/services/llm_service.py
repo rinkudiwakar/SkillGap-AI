@@ -600,14 +600,23 @@ class LLMService:
         # Process confidence_assessment
         try:
             assessment = parsed.get("confidence_assessment", "")
-            if isinstance(assessment, str):
+            if isinstance(assessment, str) and assessment.strip():
                 result["confidence_assessment"] = assessment.strip()
             else:
-                logger.warning(f"[ANALYSIS] confidence_assessment is not a string, got {type(assessment).__name__}")
-                result["confidence_assessment"] = ""
+                logger.warning(f"[ANALYSIS] confidence_assessment is empty or invalid, generating fallback.")
+                # Smart fallback based on gap count
+                if gap_count == 0:
+                    result["confidence_assessment"] = "Your profile is a strong technical match for this role. With no critical skills missing, you have a solid chance of passing the initial resume screening if you apply today."
+                elif gap_count <= 2:
+                    result["confidence_assessment"] = f"You are close to the requirements, but missing {gap_count} core skills may cause you to be filtered out. Completing a short learning sprint will significantly boost your chances."
+                else:
+                    result["confidence_assessment"] = f"With {gap_count} critical missing skills, you are unlikely to pass ATS screening for this role right now. Focus on closing the priority gaps outlined in the roadmap before applying."
         except Exception as e:
             logger.warning(f"[ANALYSIS] Error processing confidence_assessment: {e}")
-            result["confidence_assessment"] = ""
+            if gap_count == 0:
+                result["confidence_assessment"] = "Your profile is a strong technical match for this role. Apply today."
+            else:
+                result["confidence_assessment"] = f"Missing {gap_count} core skills impacts your hiring probability. Focus on the roadmap."
         
         # Log summary
         logger.info(

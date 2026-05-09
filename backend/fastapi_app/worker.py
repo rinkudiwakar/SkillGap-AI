@@ -363,12 +363,17 @@ def _execute_match_pipeline(
     # ===== STEP 8: Hiring probability =====
     task_logger.info("Step 8: Computing hiring probability")
     
+    resume_years = resume_data.get('years_experience', 0)
+    if resume_years == 0 and jd_data.get('years_required', 0) > 0:
+        # Default to JD years if not extracted to avoid unfair penalty
+        resume_years = jd_data.get('years_required', 0)
+
     scorer = get_scorer()
     hiring_prob = scorer.compute_hiring_probability(
         final_weighted_score,
         resume_skills_processed,
         jd_skills_processed,
-        resume_years=jd_data.get('years_required', 0),  # Simplified
+        resume_years=resume_years,
         jd_years_required=jd_data.get('years_required', 0),
         domain='tech',
         missing_skills_count=len(missing_skills) if missing_skills else 0
