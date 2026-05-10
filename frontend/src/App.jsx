@@ -230,6 +230,7 @@ function App() {
 
   // guest (no-auth) result
   const [guestResult, setGuestResult] = useState(null);
+  const [guestInputs, setGuestInputs] = useState(null);
   const [guestEmail, setGuestEmail] = useState("");
   const [guestEmailSent, setGuestEmailSent] = useState(false);
 
@@ -296,9 +297,66 @@ function App() {
       setCaptcha(createCaptcha());
       setAuthForm(c => ({ ...c, captchaAnswer: "" }));
     } else {
-      setAuthMessage(authMode === "signin" ? "Signed in successfully." : "Account created successfully.");
+      setAuthMessage(authMode === "signin" ? "Signed in successfully." : "Account created — saving your analysis…");
       setCaptcha(createCaptcha());
       setAuthForm(authInit);
+
+      // ── After SIGNUP: persist the guest result to Supabase if it exists ──
+      // The user just created their account from the "Create Account to see full results" CTA.
+      // We save the analysis now so it appears in their dashboard immediately.
+      const newUser = data?.user;
+      if (authMode === "signup" && newUser && guestResult && supabase) {
+        try {
+          await ensureProfile(newUser);
+          
+          let resumeId = null;
+          if (guestInputs?.up && guestInputs?.file) {
+            const filename = guestInputs.up.filename || guestInputs.file.name;
+            const row = {
+              id: guestInputs.up.resume_id,
+              user_id: newUser.id,
+              s3_key: guestInputs.up.file_path || "ephemeral_upload",
+              filename: filename,
+              file_size_bytes: guestInputs.file.size,
+              extraction_confidence: guestInputs.up.extraction_confidence,
+              extracted_text: guestInputs.up.extracted_text,
+              raw_sections: guestInputs.up.raw_sections
+            };
+            const { data: newResume, error: resumeError } = await supabase.from("resumes").insert(row).select().single();
+            if (resumeError) {
+              console.warn("Failed to save ephemeral resume on signup:", resumeError);
+            } else {
+              resumeId = newResume.id;
+            }
+          }
+          
+          if (resumeId) {
+            const payload = buildMatchInsertPayload({
+              userId: newUser.id,
+              resumeId: resumeId,
+              jdText: guestInputs?.jdText || guestResult.jd_text || "",
+              jdSourceUrl: guestInputs?.jdUrl || null,
+              result: guestResult,
+            });
+            const { error: saveErr } = await supabase.from("match_results").insert(payload);
+            if (saveErr) {
+              console.warn("Could not save guest analysis to Supabase:", saveErr.message);
+            } else {
+              setAuthMessage("Account created — analysis saved to your dashboard ✓");
+            }
+          } else {
+            console.warn("Skipping match result save: no valid resume ID available.");
+          }
+        } catch (saveEx) {
+          console.warn("Guest result save error:", saveEx);
+        }
+        // Clear guest state regardless — user is now signed in
+        setGuestResult(null);
+        setGuestInputs(null);
+        setGuestEmail("");
+        setGuestEmailSent(false);
+      }
+
       if (authMode === "signin" || data?.session) setPage("app");
     }
     setAuthLoading(false);
@@ -345,11 +403,28 @@ function App() {
     setUploading(true); setUploadMessage(""); setAnalysisError("");
     try {
       const up = await uploadResume(resumeFile);
-      const row = { id: up.resume_id, user_id: session.user.id, s3_key: up.file_path, filename: up.filename, file_size_bytes: resumeFile.size, extraction_confidence: up.extraction_confidence, extracted_text: up.extracted_text, raw_sections: up.raw_sections };
-      const { data, error } = await supabase.from("resumes").insert(row).select().single();
-      if (error) throw error;
-      setResumes(c => [data, ...c.filter(i => i.id !== data.id)]);
-      setSelectedResumeId(data.id);
+      const existing = resumes.find(r => r.filename === up.filename);
+      
+      let finalResume;
+      if (existing) {
+        const updateFields = {
+          file_size_bytes: resumeFile.size,
+          extraction_confidence: up.extraction_confidence,
+          extracted_text: up.extracted_text,
+          raw_sections: up.raw_sections
+        };
+        const { data, error } = await supabase.from("resumes").update(updateFields).eq("id", existing.id).select().single();
+        if (error) throw error;
+        finalResume = data;
+      } else {
+        const row = { id: up.resume_id, user_id: session.user.id, s3_key: up.file_path, filename: up.filename, file_size_bytes: resumeFile.size, extraction_confidence: up.extraction_confidence, extracted_text: up.extracted_text, raw_sections: up.raw_sections };
+        const { data, error } = await supabase.from("resumes").insert(row).select().single();
+        if (error) throw error;
+        finalResume = data;
+      }
+      
+      setResumes(c => [finalResume, ...c.filter(i => i.id !== finalResume.id)]);
+      setSelectedResumeId(finalResume.id);
       setUploadMessage("Resume processed successfully.");
       setResumeFile(null);
     } catch (err) { setUploadMessage(err.message || "Failed to upload resume."); }
@@ -423,7 +498,84 @@ function App() {
 
   const handleGetStarted = () => { if (session) { setPage("app"); } else { setShowAuth(true); setPage("auth"); } };
   const handleSignIn = () => { setPage("auth"); setShowAuth(true); };
-  const handleGuestResult = (result, _inputs) => { setGuestResult(result); setPage("guest-result"); };
+  const handleGuestResult = async (result, inputs) => {
+    if (session?.user && supabase) {
+      try {
+        let resumeId = null;
+        // 1. If we have the uploaded file info, save it to the resumes table so the FK constraint passes
+        if (inputs?.up && inputs?.file) {
+          const filename = inputs.up.filename || inputs.file.name;
+          const existing = resumes.find(r => r.filename === filename);
+          
+          if (existing) {
+            // Update existing
+            const updateFields = {
+              file_size_bytes: inputs.file.size,
+              extraction_confidence: inputs.up.extraction_confidence,
+              extracted_text: inputs.up.extracted_text,
+              raw_sections: inputs.up.raw_sections
+            };
+            const { data: updatedResume, error: resumeError } = await supabase.from("resumes").update(updateFields).eq("id", existing.id).select().single();
+            if (resumeError) {
+              console.warn("Failed to update existing resume:", resumeError);
+            } else {
+              resumeId = existing.id;
+              setResumes(c => [updatedResume, ...c.filter(i => i.id !== updatedResume.id)]);
+            }
+          } else {
+            // Insert new
+            const row = {
+              id: inputs.up.resume_id,
+              user_id: session.user.id,
+              s3_key: inputs.up.file_path || "ephemeral_upload",
+              filename: filename,
+              file_size_bytes: inputs.file.size,
+              extraction_confidence: inputs.up.extraction_confidence,
+              extracted_text: inputs.up.extracted_text,
+              raw_sections: inputs.up.raw_sections
+            };
+            const { data: newResume, error: resumeError } = await supabase.from("resumes").insert(row).select().single();
+            if (resumeError) {
+              console.warn("Failed to save ephemeral resume to DB:", resumeError);
+            } else {
+              resumeId = newResume.id;
+              setResumes(c => [newResume, ...c.filter(i => i.id !== newResume.id)]);
+            }
+          }
+        }
+
+        // 2. Save the match result
+        const payload = buildMatchInsertPayload({
+          userId: session.user.id,
+          resumeId: resumeId, // Now it points to a valid row in resumes table
+          jdText: inputs?.jdText || result.jd_text || "",
+          jdSourceUrl: inputs?.jdUrl || null,
+          result: result,
+        });
+        const { data: storedMatch, error: matchError } = await supabase.from("match_results").insert(payload).select().single();
+        
+        if (!matchError && storedMatch) {
+          // 3. Save to history for trend tracking
+          await supabase.from("match_history").insert({ user_id: session.user.id, match_result_id: storedMatch.id, snapshot_match_score: storedMatch.match_score, snapshot_hiring_probability: storedMatch.hiring_probability, snapshot_timestamp: new Date().toISOString() });
+          
+          const displayResult = mergeResultForDisplay(storedMatch, result);
+          setMatchResults(c => [displayResult, ...c]);
+          setAnalysisResult(displayResult);
+          setActiveTab("history");
+          setPage("app");
+          return;
+        } else {
+          console.warn("Failed to insert match_results:", matchError);
+        }
+      } catch (err) {
+        console.warn("Failed to auto-save result for logged-in user", err);
+      }
+    }
+    setGuestResult(result); 
+    setGuestInputs(inputs);
+    setPage("guest-result"); 
+  };
+
 
   // ── AUTH PAGE ──
   if (page === "auth" || (!session && showAuth)) {

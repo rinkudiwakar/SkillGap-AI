@@ -66,7 +66,7 @@ function HeroUploadBox({ onResult }) {
       });
       const res = await pollForResult(submitted.task_id);
       setPhase("done");
-      onResult(res.result, { file, jdText, jdUrl });
+      onResult(res.result, { file, jdText, jdUrl, up });
     } catch (err) {
       setPhase("error");
       setErrorMsg(err.message || "Analysis failed. Please try again.");
