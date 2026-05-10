@@ -299,20 +299,40 @@ function normalizePercent(value) {
   return Math.round(numeric <= 1 ? numeric * 100 : numeric);
 }
 
-function WaterfallRow({ label, value, maxAbs = 100 }) {
-  const displayValue = normalizePercent(value);
-  if (displayValue == null) return null;
-  const isPos = displayValue >= 0;
-  const pct = Math.min(Math.abs(displayValue) / maxAbs * 100, 100);
+function toInsightSentence(label, rawValue) {
+  const v = normalizePercent(rawValue);
+  if (v == null) return null;
+
+  if (label === "Primary Skill Match") {
+    if (v >= 75) return { icon: "✓", color: "var(--green)", text: "Your skills closely match what this role requires." };
+    if (v >= 50) return { icon: "~", color: "var(--amber)", text: "Your skills partially match this role — a few gaps to fill." };
+    return { icon: "✗", color: "var(--red)", text: "Your skill set has significant gaps compared to this role's requirements." };
+  }
+  if (label === "Semantic Text Similarity") {
+    if (v >= 70) return { icon: "✓", color: "var(--green)", text: "Your experience description closely matches what this role requires." };
+    if (v >= 45) return { icon: "~", color: "var(--amber)", text: "Your experience description is somewhat aligned — consider stronger action verbs." };
+    return { icon: "✗", color: "var(--red)", text: "Your experience description doesn't strongly align with this role's language." };
+  }
+  if (label === "Project Relevance") {
+    if (v >= 70) return { icon: "✓", color: "var(--green)", text: "Your past projects are highly relevant to this kind of work." };
+    if (v >= 40) return { icon: "~", color: "var(--amber)", text: "Some of your projects are relevant, but not all are a strong fit." };
+    return { icon: "✗", color: "var(--red)", text: "Your listed projects don't closely match the work described in this JD." };
+  }
+  if (label === "Experience Relevance") {
+    if (v >= 70) return { icon: "✓", color: "var(--green)", text: "Your work history is a strong fit for what this employer is looking for." };
+    if (v >= 40) return { icon: "~", color: "var(--amber)", text: "Your background is partially relevant — framing your experience differently could help." };
+    return { icon: "✗", color: "var(--red)", text: "Your work history doesn't closely match the level or domain this role expects." };
+  }
+  return null;
+}
+
+function InsightRow({ label, value }) {
+  const insight = toInsightSentence(label, value);
+  if (!insight) return null;
   return (
-    <div className="waterfall-row">
-      <div className="waterfall-label">{label}</div>
-      <div className="waterfall-bar-wrap">
-        <div className={`waterfall-bar ${isPos ? "pos" : "neg"}`} style={{ width: `${pct}%` }} />
-      </div>
-      <div className={`waterfall-value`} style={{ color: isPos ? "var(--green)" : "var(--red)" }}>
-        {isPos ? "+" : ""}{displayValue}%
-      </div>
+    <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", padding: "0.75rem 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+      <span style={{ fontSize: "1.1rem", color: insight.color, lineHeight: 1, paddingTop: "0.1rem", flexShrink: 0 }}>{insight.icon}</span>
+      <span style={{ fontSize: "0.88rem", color: "rgba(255,255,255,0.7)", lineHeight: 1.6 }}>{insight.text}</span>
     </div>
   );
 }
@@ -450,19 +470,15 @@ export default function ResultDetail({ result }) {
 
             <div className="stack">
               <div className="panel" style={{ background: "rgba(13, 20, 38, 0.4)" }}>
-                <div className="eyebrow" style={{ marginBottom: "1.25rem" }}>Calibration Logic</div>
-                <h4 style={{ marginBottom: "1.5rem" }}>Accuracy Factors</h4>
-                <WaterfallRow label="Primary Skill Match" value={skillMatchScore} />
-                <WaterfallRow label="Semantic Text Similarity" value={semanticSimilarity} />
-                <WaterfallRow label="Project Relevance" value={projectRelevance} />
-                <WaterfallRow label="Experience Relevance" value={experienceRelevance} />
-                <div style={{ borderTop: "1px solid var(--border)", paddingTop: "1rem", marginTop: "1rem", display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
-                  <span>Final Hiring Probability</span>
-                  <span style={{ color: "var(--accent)", fontFamily: "var(--font-display)", fontSize: "1.4rem" }}>{finalAccuracyScore}%</span>
+                <div className="eyebrow" style={{ marginBottom: "1rem" }}>What This Score Means</div>
+                <InsightRow label="Primary Skill Match" value={skillMatchScore} />
+                <InsightRow label="Semantic Text Similarity" value={semanticSimilarity} />
+                <InsightRow label="Project Relevance" value={projectRelevance} />
+                <InsightRow label="Experience Relevance" value={experienceRelevance} />
+                <div style={{ borderTop: "1px solid var(--border)", paddingTop: "1rem", marginTop: "0.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: 700 }}>
+                  <span style={{ fontSize: "0.88rem" }}>Overall Hiring Probability</span>
+                  <span style={{ color: "var(--accent)", fontFamily: "var(--font-display)", fontSize: "1.5rem" }}>{finalAccuracyScore}%</span>
                 </div>
-                <p style={{ color: "var(--muted)", fontSize: "0.78rem", lineHeight: 1.6, marginTop: "0.9rem" }}>
-                  Values are loaded from the saved analysis result, not hardcoded UI placeholders.
-                </p>
               </div>
             </div>
           </div>
@@ -472,42 +488,29 @@ export default function ResultDetail({ result }) {
       {/* SKILL GAP */}
       {tab === "skills" && (
         <div className="tab-content">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", flexWrap: "wrap", gap: "0.5rem" }}>
-            <span style={{ color: "var(--muted)", fontSize: "0.9rem" }}>{totalSkills} skills required · {totalFound} found · {totalMissing} missing</span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <span className="badge badge-green">{totalFound} Found</span>
-              <span className="badge badge-red">{totalMissing} Missing</span>
-            </div>
-          </div>
           <div className="skills-split">
+            {/* Left: green pills */}
             <div>
-              <div className="skills-col-header found-header">✓ Skills Found — {totalFound} of {totalSkills}</div>
-              <div className="progress-bar-wrap" style={{ marginBottom: "1rem" }}>
-                <div className="progress-bar-fill" style={{ width: `${totalSkills ? (totalFound / totalSkills) * 100 : 0}%`, background: "var(--green)" }} />
-              </div>
-              <div className="skills-found">
-                {foundSkills.length > 0 ? foundSkills.map((s) => <SkillPill key={s} skill={s} type="found" />) : <span className="muted">No skill data available.</span>}
+              <div className="skills-col-header found-header" style={{ marginBottom: "1rem" }}>✓ Skills You Have</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                {foundSkills.length > 0
+                  ? foundSkills.map((s) => <SkillPill key={s} skill={s} type="found" />)
+                  : <span style={{ color: "var(--muted)", fontSize: "0.85rem" }}>No matched skills found.</span>}
               </div>
             </div>
+            {/* Right: red pills */}
             <div>
-              <div className="skills-col-header missing-header">✗ Skills Missing — {totalMissing} of {totalSkills}</div>
-              <div className="progress-bar-wrap" style={{ marginBottom: "1rem" }}>
-                <div className="progress-bar-fill" style={{ width: `${totalSkills ? (totalMissing / totalSkills) * 100 : 0}%`, background: "var(--red)" }} />
+              <div className="skills-col-header missing-header" style={{ marginBottom: "1rem" }}>✗ Skills You're Missing</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                {allMissing.length > 0
+                  ? allMissing.map((s) => (
+                    <span key={s} style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+                      <span className="skill-pill missing">✗ {s}</span>
+                      <LearnBtn skill={s} />
+                    </span>
+                  ))
+                  : <span style={{ color: "var(--muted)", fontSize: "0.85rem" }}>No missing skills — great fit!</span>}
               </div>
-              {criticalSkills.length > 0 || importantSkills.length > 0 || niceSkills.length > 0 ? (
-                <>
-                  <PriorityGroup label="CRITICAL" color="var(--red)" dot="🔴" skills={criticalSkills} />
-                  <PriorityGroup label="IMPORTANT" color="var(--amber)" dot="🟡" skills={importantSkills} />
-                  <PriorityGroup label="NICE TO HAVE" color="var(--green)" dot="🟢" skills={niceSkills} />
-                </>
-              ) : (
-                allMissing.map((s) => (
-                  <span key={s} style={{ display: "inline-flex", alignItems: "center", margin: "0 0.4rem 0.4rem 0" }}>
-                    <span className="skill-pill missing">{s}</span>
-                    <LearnBtn skill={s} />
-                  </span>
-                ))
-              )}
             </div>
           </div>
         </div>

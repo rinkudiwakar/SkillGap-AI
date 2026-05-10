@@ -223,6 +223,11 @@ function App() {
   const [applicationSubmitting, setApplicationSubmitting] = useState(false);
   const [applicationMessage, setApplicationMessage] = useState("");
 
+  // guest (no-auth) result
+  const [guestResult, setGuestResult] = useState(null);
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestEmailSent, setGuestEmailSent] = useState(false);
+
   // ── Boot ──
   useEffect(() => {
     if (!hasSupabaseEnv || !supabase) return;
@@ -413,6 +418,7 @@ function App() {
 
   const handleGetStarted = () => { if (session) { setPage("app"); } else { setShowAuth(true); setPage("auth"); } };
   const handleSignIn = () => { setPage("auth"); setShowAuth(true); };
+  const handleGuestResult = (result, _inputs) => { setGuestResult(result); setPage("guest-result"); };
 
   // ── AUTH PAGE ──
   if (page === "auth" || (!session && showAuth)) {
@@ -458,8 +464,88 @@ function App() {
     );
   }
 
-  // ── HOME / PRICING / LEGAL (public) ──
+  // ── HOME / PRICING / LEGAL / GUEST-RESULT (public) ──
   const isLegalPage = page === "legal-terms" || page === "legal-privacy" || page === "legal-data";
+
+  // ── GUEST RESULT PAGE ──
+  if (page === "guest-result" && guestResult) {
+    const score = Math.round(Number(guestResult.hiring_probability || 0));
+    const foundSkills = guestResult.found_skills || guestResult.matched_skills || [];
+    const missingSkills = guestResult.missing_skills || {};
+    const criticalSkills = Array.isArray(missingSkills) ? [] : (missingSkills.critical || []);
+    const importantSkills = Array.isArray(missingSkills) ? [] : (missingSkills.important || []);
+    const niceSkills = Array.isArray(missingSkills) ? [] : (missingSkills.nice_to_have || []);
+    const allMissing = Array.isArray(missingSkills) ? missingSkills : [...criticalSkills, ...importantSkills, ...niceSkills];
+    const scoreColor = score >= 70 ? "var(--green)" : score >= 45 ? "#F59E0B" : "var(--red)";
+
+    return (
+      <div>
+        <Navbar onGetStarted={handleGetStarted} onSignIn={handleSignIn} session={session} onSignOut={handleSignOut} currentPage={page} setPage={setPage} />
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "4rem 2rem" }}>
+          {/* Score banner */}
+          <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(4rem,8vw,6rem)", fontWeight: 700, color: scoreColor, lineHeight: 1 }}>{score}%</div>
+            <div style={{ fontSize: "1.1rem", color: "rgba(255,255,255,0.6)", marginTop: "0.5rem" }}>Hiring Probability</div>
+            {guestResult.jd_role && <div style={{ marginTop: "0.5rem", fontWeight: 600, fontSize: "1rem" }}>for {guestResult.jd_role}</div>}
+            {guestResult.summary && (
+              <p style={{ maxWidth: 600, margin: "1.25rem auto 0", color: "rgba(255,255,255,0.65)", lineHeight: 1.7, fontStyle: "italic", fontSize: "0.95rem" }}>&#8220;{guestResult.summary}&#8221;</p>
+            )}
+          </div>
+
+          {/* Skill pills — the core value */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", marginBottom: "3rem" }}>
+            <div className="panel">
+              <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--green)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "1rem" }}>✓ Skills You Have</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                {foundSkills.length > 0
+                  ? foundSkills.map(s => <span key={s} className="skill-pill found">✓ {s}</span>)
+                  : <span style={{ color: "var(--muted)" }}>No matched skills detected.</span>}
+              </div>
+            </div>
+            <div className="panel">
+              <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--red)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "1rem" }}>✗ Skills You're Missing</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                {allMissing.length > 0
+                  ? allMissing.map(s => <span key={s} className="skill-pill missing">✗ {s}</span>)
+                  : <span style={{ color: "var(--muted)" }}>No skill gaps found — strong match!</span>}
+              </div>
+            </div>
+          </div>
+
+          {/* Email capture gate */}
+          <div className="panel" style={{ maxWidth: 560, margin: "0 auto", textAlign: "center", background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.25)" }}>
+            {!guestEmailSent ? (
+              <>
+                <div className="badge badge-indigo" style={{ display: "inline-flex", marginBottom: "1rem" }}>✦ Save your results</div>
+                <h3 style={{ marginBottom: "0.5rem", fontSize: "1.3rem" }}>Want AI-rewritten bullets + full report?</h3>
+                <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>Create your free account to unlock AI bullet rewrites, the full skill roadmap, and save this analysis to your dashboard.</p>
+                <button className="btn-primary btn-lg" style={{ width: "100%", marginBottom: "0.75rem" }} onClick={() => { setAuthMode("signup"); if (guestEmail) setAuthForm(c => ({ ...c, email: guestEmail })); handleGetStarted(); }}>
+                  Create Free Account →
+                </button>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", margin: "0.75rem 0", opacity: 0.4 }}><div style={{ flex: 1, height: 1, background: "var(--border)" }} /><span style={{ fontSize: "0.75rem" }}>or</span><div style={{ flex: 1, height: 1, background: "var(--border)" }} /></div>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <input type="email" placeholder="Enter your email for updates" value={guestEmail} onChange={e => setGuestEmail(e.target.value)} style={{ flex: 1, fontSize: "0.9rem" }} />
+                  <button className="btn-ghost" onClick={() => { if (guestEmail) setGuestEmailSent(true); }}>Notify me</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>✓</div>
+                <h3 style={{ marginBottom: "0.5rem" }}>You're on the list!</h3>
+                <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.9rem" }}>We'll send updates to {guestEmail}.</p>
+              </>
+            )}
+          </div>
+
+          <div style={{ textAlign: "center", marginTop: "2rem" }}>
+            <button className="btn-ghost" onClick={() => { setGuestResult(null); setGuestEmail(""); setGuestEmailSent(false); setPage("home"); }}>← Analyse another resume</button>
+          </div>
+        </div>
+        <Footer setPage={setPage} />
+      </div>
+    );
+  }
+
   if (!session || page === "home" || page === "pricing" || isLegalPage) {
     const legalSection = page === "legal-privacy" ? "privacy" : page === "legal-data" ? "data" : "terms";
     return (
@@ -469,7 +555,7 @@ function App() {
           ? <LegalPage initialSection={legalSection} />
           : page === "pricing"
             ? <PricingPage onGetStarted={handleGetStarted} />
-            : <LandingPage onGetStarted={handleGetStarted} />
+            : <LandingPage onGetStarted={handleGetStarted} onGuestResult={handleGuestResult} />
         }
         <Footer setPage={setPage} />
       </div>
