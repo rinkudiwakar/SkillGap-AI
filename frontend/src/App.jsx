@@ -10,6 +10,11 @@ import RoadmapTimeline from "./components/analysis/RoadmapTimeline";
 import LandingPage from "./pages/LandingPage";
 import PricingPage from "./pages/PricingPage";
 import LegalPage from "./pages/LegalPage";
+import AboutPage from "./pages/AboutPage";
+import CareersPage from "./pages/CareersPage";
+import BlogPage from "./pages/BlogPage";
+import HowItWorksPage from "./pages/HowItWorksPage";
+import FeaturesPage from "./pages/FeaturesPage";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -464,8 +469,9 @@ function App() {
     );
   }
 
-  // ── HOME / PRICING / LEGAL / GUEST-RESULT (public) ──
+  // ── PUBLIC PAGE CHECKS ──
   const isLegalPage = page === "legal-terms" || page === "legal-privacy" || page === "legal-data";
+  const isPublicPage = !session || page === "home" || page === "pricing" || page === "about" || page === "careers" || page === "blog" || page === "how-it-works" || page === "features" || isLegalPage;
 
   // ── GUEST RESULT PAGE ──
   if (page === "guest-result" && guestResult) {
@@ -541,12 +547,13 @@ function App() {
             <button className="btn-ghost" onClick={() => { setGuestResult(null); setGuestEmail(""); setGuestEmailSent(false); setPage("home"); }}>← Analyse another resume</button>
           </div>
         </div>
-        <Footer setPage={setPage} />
+        <Footer setPage={setPage} session={session} />
       </div>
     );
   }
 
-  if (!session || page === "home" || page === "pricing" || isLegalPage) {
+
+  if (isPublicPage) {
     const legalSection = page === "legal-privacy" ? "privacy" : page === "legal-data" ? "data" : "terms";
     return (
       <div>
@@ -555,9 +562,19 @@ function App() {
           ? <LegalPage initialSection={legalSection} />
           : page === "pricing"
             ? <PricingPage onGetStarted={handleGetStarted} />
-            : <LandingPage onGetStarted={handleGetStarted} onGuestResult={handleGuestResult} />
+            : page === "about"
+              ? <AboutPage onGetStarted={handleGetStarted} />
+              : page === "careers"
+                ? <CareersPage />
+                : page === "blog"
+                  ? <BlogPage />
+                  : page === "how-it-works"
+                    ? <HowItWorksPage onGetStarted={handleGetStarted} />
+                    : page === "features"
+                      ? <FeaturesPage onGetStarted={handleGetStarted} />
+                      : <LandingPage onGetStarted={handleGetStarted} onGuestResult={handleGuestResult} />
         }
-        <Footer setPage={setPage} />
+        <Footer setPage={setPage} session={session} />
       </div>
     );
   }

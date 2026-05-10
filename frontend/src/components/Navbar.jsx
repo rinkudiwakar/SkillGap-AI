@@ -11,8 +11,8 @@ export default function Navbar({ onGetStarted, onSignIn, session, onSignOut, cur
   }, []);
 
   const navLinks = [
-    { label: "How It Works", href: "#how-it-works" },
-    { label: "Features", href: "#features" },
+    { label: "How It Works", onClick: () => setPage("how-it-works") },
+    { label: "Features", onClick: () => setPage("features") },
     { label: "Pricing", onClick: () => setPage("pricing") },
   ];
 
