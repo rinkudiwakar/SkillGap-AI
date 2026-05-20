@@ -1,93 +1,92 @@
+/* ══════════════════════════════════════════
+   STITCH FOOTER — SkillGap AI v3
+   Source: Stitch "Skillgap AI - Refined Brand Landing Page"
+   Props preserved: setPage, session
+══════════════════════════════════════════ */
 export default function Footer({ setPage, session }) {
   const go = (page) => (e) => { e.preventDefault(); window.scrollTo(0, 0); setPage(page); };
 
+  const productLinks = [
+    { label: "Resume Audit",  onClick: go("how-it-works") },
+    { label: "Skill Lab",     onClick: go("features") },
+    { label: "API",           href: "#" },
+    { label: "Pricing",       href: "#pricing" },
+    { label: "Dashboard →",   onClick: (e) => { e.preventDefault(); session ? setPage("app") : setPage("auth"); } },
+  ];
+
+  const legalLinks = [
+    { label: "Privacy Policy",      onClick: go("legal-privacy") },
+    { label: "Terms of Service",    onClick: go("legal-terms") },
+    { label: "Data Handling Policy", onClick: go("legal-data") },
+  ];
+
+  const companyLinks = [
+    { label: "About Us", onClick: go("about") },
+    { label: "Contact",  href: "mailto:hello@skillgap.ai" },
+    { label: "Blog",     onClick: go("blog") },
+  ];
+
   return (
-    <footer className="footer">
-      <div className="footer-inner">
+    <footer className="stitch-footer">
+      <div className="stitch-footer-inner">
         {/* Brand */}
-        <div className="footer-brand">
-          <div className="nav-logo" onClick={() => setPage("home")} style={{ cursor: "pointer", marginBottom: "0.75rem" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-            </svg>
-            SkillGap AI
-          </div>
-          <p>AI-powered resume intelligence for the Indian job market. Know your exact chances before you apply.</p>
-          <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
-            {[
-              ["Twitter / X", "𝕏", "https://twitter.com"],
-              ["LinkedIn", "in", "https://linkedin.com"],
-              ["GitHub", "⭙", "https://github.com"],
-            ].map(([label, icon, href]) => (
-              <a
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={label}
-                style={{ width: 34, height: 34, borderRadius: "50%", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.78rem", color: "var(--muted)", transition: "border-color 0.2s, color 0.2s" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.color = "var(--accent)"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
-              >
-                {icon}
-              </a>
-            ))}
-          </div>
+        <div className="stitch-footer-brand">
+          <span className="stitch-footer-brand-name" onClick={() => setPage("home")}>
+            Skillgap AI
+          </span>
+          <p>The clinical standard for resume intelligence and skill gap analysis.</p>
+          <span className="stitch-footer-version">v2.4.0-stable</span>
         </div>
 
         {/* Product */}
-        <div className="footer-col">
-          <h4>Product</h4>
+        <div className="stitch-footer-col">
+          <div className="stitch-footer-col-head">PRODUCT</div>
           <ul>
-            <li><a href="#" onClick={go("how-it-works")}>How It Works</a></li>
-            <li><a href="#" onClick={go("features")}>Features</a></li>
-            <li><a href="#" onClick={go("pricing")}>Pricing</a></li>
-            <li><a href="#" onClick={go("blog")}>Blog</a></li>
-            <li>
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (session) { setPage("app"); }
-                  else { setPage("auth"); }
-                }}
-              >
-                Dashboard →
-              </a>
-            </li>
+            {productLinks.map((l) => (
+              <li key={l.label}>
+                {l.onClick
+                  ? <a href="#" onClick={l.onClick}>{l.label}</a>
+                  : <a href={l.href}>{l.label}</a>
+                }
+              </li>
+            ))}
           </ul>
         </div>
 
         {/* Legal */}
-        <div className="footer-col">
-          <h4>Legal &amp; Trust</h4>
+        <div className="stitch-footer-col">
+          <div className="stitch-footer-col-head">LEGAL</div>
           <ul>
-            <li><a href="#" onClick={go("legal-terms")}>Terms &amp; Conditions</a></li>
-            <li><a href="#" onClick={go("legal-privacy")}>Privacy Policy</a></li>
-            <li><a href="#" onClick={go("legal-data")}>Data Handling Policy</a></li>
-            <li><a href="mailto:legal@skillgap.ai">legal@skillgap.ai</a></li>
+            {legalLinks.map((l) => (
+              <li key={l.label}>
+                <a href="#" onClick={l.onClick}>{l.label}</a>
+              </li>
+            ))}
           </ul>
         </div>
 
         {/* Company */}
-        <div className="footer-col">
-          <h4>Company</h4>
+        <div className="stitch-footer-col">
+          <div className="stitch-footer-col-head">COMPANY</div>
           <ul>
-            <li><a href="#" onClick={go("about")}>About</a></li>
-            <li><a href="mailto:hello@skillgap.ai">Contact Us</a></li>
-            <li><a href="#" onClick={go("careers")}>Careers</a></li>
-            <li><a href="#" onClick={go("blog")}>Blog</a></li>
+            {companyLinks.map((l) => (
+              <li key={l.label}>
+                {l.href
+                  ? <a href={l.href}>{l.label}</a>
+                  : <a href="#" onClick={l.onClick}>{l.label}</a>
+                }
+              </li>
+            ))}
           </ul>
         </div>
       </div>
 
-      <div className="footer-bottom" style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        <span>© 2026 SkillGap AI</span>
-        <div style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
-          <a href="#" onClick={go("legal-privacy")} style={{ color: "rgba(255,255,255,0.25)", fontSize: "0.78rem" }}>Privacy</a>
-          <a href="#" onClick={go("legal-terms")} style={{ color: "rgba(255,255,255,0.25)", fontSize: "0.78rem" }}>Terms</a>
-          <a href="#" onClick={go("about")} style={{ color: "rgba(255,255,255,0.25)", fontSize: "0.78rem" }}>About</a>
-          <span style={{ color: "rgba(255,255,255,0.2)", fontSize: "0.78rem" }}>No resume data stored after session</span>
+      {/* Bottom bar */}
+      <div className="stitch-footer-bottom">
+        <div className="stitch-footer-copy">© 2026 SKILLGAP AI. ALL RIGHTS RESERVED.</div>
+        <div className="stitch-footer-zero">
+          <i className="ti ti-lock" />
+          NO DATA STORED. ZERO PERSISTENCE MODEL ACTIVE.
         </div>
       </div>
     </footer>

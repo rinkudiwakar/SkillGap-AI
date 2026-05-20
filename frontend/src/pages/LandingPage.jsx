@@ -1,8 +1,32 @@
 import { useEffect, useRef, useState } from "react";
-import SampleReportModal from "../components/SampleReportModal";
-import LandingAnalysisWidget from "../components/LandingAnalysisWidget";
 
-/* ── Counter hook ─────────────────────────────────────────────── */
+/* ══════════════════════════════════════════
+   STITCH LANDING PAGE — SkillGap AI v3
+   Source: Stitch Project 12721994372912798182
+   Screen: "Skillgap AI - Refined Brand Landing Page"
+   Props preserved: onGetStarted, onGuestResult
+══════════════════════════════════════════ */
+
+/* ── Scroll reveal hook ── */
+function useReveal() {
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("visible");
+            observer.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.12 }
+    );
+    document.querySelectorAll(".reveal-on-scroll").forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+}
+
+/* ── Animated counter ── */
 function useCountUp(target, trigger) {
   const [val, setVal] = useState(0);
   useEffect(() => {
@@ -29,16 +53,16 @@ function StatCounter({ value, label, suffix = "" }) {
     return () => obs.disconnect();
   }, []);
   return (
-    <div className="hero-stat" ref={ref}>
-      <strong>{count.toLocaleString()}{suffix}</strong>
-      <span>{label}</span>
+    <div ref={ref}>
+      <div className="stitch-stat-num">{count.toLocaleString()}{suffix}</div>
+      <div className="stitch-stat-label">{label}</div>
     </div>
   );
 }
 
-/* ── Hero Widget ──────────────────────────────────────────────── */
+/* ── Hero Widget (live analysis preview) ── */
 function HeroWidget() {
-  const [phase, setPhase] = useState(0);
+  const [phase, setPhase] = useState(0); // 0 = scanning, 1 = result
   useEffect(() => {
     const t1 = setTimeout(() => setPhase(1), 2400);
     const t2 = setTimeout(() => setPhase(0), 7000);
@@ -46,478 +70,448 @@ function HeroWidget() {
     return () => { clearTimeout(t1); clearTimeout(t2); clearInterval(t3); };
   }, []);
 
+  const circumference = 2 * Math.PI * 56;
+  const offset = circumference - (73 / 100) * circumference;
+
   return (
-    <div className="hero-widget">
-      {/* header bar */}
-      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.25rem" }}>
-        <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--accent)" }} />
-        <span style={{ fontSize: "0.72rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-2)" }}>
-          Live Analysis
+    <div className="stitch-hero-widget">
+      {/* topbar */}
+      <div className="stitch-widget-topbar">
+        <span className="stitch-widget-label">LIVE_ANALYSIS_PREVIEW</span>
+        <span className="stitch-widget-badge">
+          {phase === 0 ? "In Progress..." : "Complete ✓"}
         </span>
       </div>
 
-      {/* skeleton lines */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: "1.25rem" }}>
-        {["80%", "55%", "70%", "40%", "65%"].map((w, i) => (
-          <div key={i} style={{
-            height: 7, background: "rgba(255,255,255,0.05)", borderRadius: 3, width: w,
-            animation: `pulse 2s ${i * 0.18}s ease-in-out infinite alternate`
-          }} />
-        ))}
+      {/* gauge + insight row */}
+      <div className="stitch-gauge-row">
+        <div className="stitch-gauge-wrap">
+          <svg className="stitch-gauge-svg" viewBox="0 0 128 128">
+            <circle cx="64" cy="64" r="56" fill="transparent" stroke="var(--bg3)" strokeWidth="8" />
+            <circle
+              cx="64" cy="64" r="56" fill="transparent"
+              stroke={phase === 0 ? "var(--border)" : "var(--accent-2)"}
+              strokeWidth="8"
+              strokeDasharray={circumference}
+              strokeDashoffset={phase === 0 ? circumference * 0.7 : offset}
+              strokeLinecap="round"
+              style={{ transition: "stroke-dashoffset 1.2s ease, stroke 0.6s ease" }}
+            />
+          </svg>
+          <div className="stitch-gauge-center">
+            <span className="stitch-gauge-num" style={{ color: phase === 0 ? "var(--text-3)" : "var(--accent-2)" }}>
+              {phase === 0 ? "—" : "73%"}
+            </span>
+            <span className="stitch-gauge-sub">MATCH</span>
+          </div>
+        </div>
+
+        <div className="stitch-widget-insight">
+          <div className="stitch-widget-bar-wrap">
+            <div
+              className="stitch-widget-bar-fill"
+              style={{
+                width: phase === 0 ? "35%" : "73%",
+                transition: "width 1.4s cubic-bezier(0.16,1,0.3,1)"
+              }}
+            />
+          </div>
+          <p className="stitch-widget-desc">
+            {phase === 0
+              ? "Semantic matching in progress…"
+              : <>Current profile is missing key <span style={{ color: "var(--accent-2)" }}>infrastructure-as-code</span> keywords required for this Senior DevOps role.</>
+            }
+          </p>
+        </div>
       </div>
 
-      {/* scan bar */}
-      {phase === 0 && (
-        <div style={{ marginBottom: "1.25rem" }}>
-          <div style={{ fontSize: "0.77rem", color: "var(--text-2)", marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <span style={{ animation: "spin 1.2s linear infinite", display: "inline-block" }}>⟳</span>
-            Semantic matching…
-          </div>
-          <div className="hero-widget-bar"><div className="hero-widget-fill" /></div>
+      {/* skill pills */}
+      {phase === 1 && (
+        <div className="stitch-widget-pills" style={{ animation: "fadeSlideUp 0.35s ease" }}>
+          <span className="stitch-wpill-found"><i className="ti ti-check" style={{ fontSize: "0.7rem" }} /> Python</span>
+          <span className="stitch-wpill-found"><i className="ti ti-check" style={{ fontSize: "0.7rem" }} /> Docker</span>
+          <span className="stitch-wpill-missing"><i className="ti ti-x" style={{ fontSize: "0.7rem" }} /> Kubernetes</span>
+          <span className="stitch-wpill-missing"><i className="ti ti-x" style={{ fontSize: "0.7rem" }} /> Terraform</span>
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* result */}
-      {phase === 1 && (
-        <div style={{ animation: "fadeSlide 0.35s ease" }}>
-          <div style={{ marginBottom: "1rem" }}>
-            <div className="wscore-num">73%</div>
-            <div className="wscore-label">Hiring probability · ±5%</div>
+/* ── FAQ Item ── */
+function FaqItem({ q, a }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="stitch-faq-item">
+      <button className={`stitch-faq-trigger${open ? " open" : ""}`} onClick={() => setOpen(!open)}>
+        <span>{q}</span>
+        <i className="ti ti-plus" />
+      </button>
+      {open && <div className="stitch-faq-body">{a}</div>}
+    </div>
+  );
+}
+
+/* ── Testimonials Row (marquee) ── */
+const TESTIMONIALS_ROW1 = [
+  { verdict: "VERDICT: HIRED",   pct: "94%", quote: "\"The tool spotted that I wasn't emphasizing 'Scale' enough for the Netflix role.\"",        author: "— CS Student @ Stanford" },
+  { verdict: "VERDICT: HIRED",   pct: "88%", quote: "\"From 0 interviews to 3 in a week after one optimization cycle.\"",                         author: "— SWE @ Meta" },
+  { verdict: "VERDICT: OFFER",   pct: "91%", quote: "\"Actually useful feedback instead of generic 'use strong verbs' fluff.\"",                  author: "— Product Lead @ Airbnb" },
+  { verdict: "VERDICT: HIRED",   pct: "96%", quote: "\"The semantic analysis is terrifyingly accurate. It found gaps I didn't even see.\"",       author: "— Senior Dev @ Stripe" },
+];
+const TESTIMONIALS_ROW2 = [
+  { verdict: "VERDICT: PASSED",  pct: "82%", quote: "\"Finally understood why I was getting auto-rejected by the ATS.\"",                       author: "— Analyst @ Goldman" },
+  { verdict: "VERDICT: HIRED",   pct: "96%", quote: "\"The semantic analysis is terrifyingly accurate. It found gaps I didn't even see.\"",      author: "— Senior Dev @ Stripe" },
+  { verdict: "VERDICT: OFFER",   pct: "89%", quote: "\"Highest ROI of any career tool I've used this year.\"",                                  author: "— Manager @ Uber" },
+  { verdict: "VERDICT: HIRED",   pct: "94%", quote: "\"The bullet rewriter kept my real metrics intact but finally made them land.\"",            author: "— PM @ Notion" },
+];
+
+function TestimonialCard({ verdict, pct, quote, author }) {
+  return (
+    <div className="stitch-testimonial-card">
+      <div className="stitch-testimonial-top">
+        <span className="stitch-verdict-pill">{verdict}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.62rem", color: "var(--text-2)" }}>{pct} MATCH</span>
+      </div>
+      <p className="stitch-testimonial-quote">{quote}</p>
+      <div className="stitch-testimonial-author">{author}</div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   MAIN LANDING PAGE COMPONENT
+═══════════════════════════════════════════════════════ */
+export default function LandingPage({ onGetStarted, onGuestResult }) {
+  useReveal();
+
+  const FAQS = [
+    { q: "How is this different from generic \"Resume Checkers\"?", a: "Generic checkers just count keywords. We use LLMs to perform semantic gap analysis — meaning we understand if your experience in \"Distributed Systems\" implies knowledge of \"Concurrency\" even if the word isn't there." },
+    { q: "Is my data secure?", a: "We operate a Zero Persistence Model. Your resume is parsed in memory and destroyed once the report is generated. We don't sell your data or use it to train our own base models." },
+    { q: "Does this work for non-tech roles?", a: "While we specialize in high-stakes tech and finance roles where ATS filters are most aggressive, the logic works for any structured job description and professional resume." },
+    { q: "Can the AI write the resume for me?", a: "We provide \"suggested rewrites\" for specific bullets, but we don't generate full resumes. We believe in high-agency applications where you remain the editor-in-chief of your own career story." },
+    { q: "How accurate is the \"Verdict\" score?", a: "The score represents how closely your semantic profile aligns with the explicit and implicit requirements of the job post. It's an indicator of your chance to pass the automated screen, not a guarantee of a hire." },
+    { q: "What file formats are supported?", a: "We support PDF, DOCX, and TXT files. For best results, we recommend standard single-column PDF layouts which are most readable by both our AI and recruiter ATS systems." },
+    { q: "Can I use this for free?", a: "Yes. Every user gets 1 full intelligence report for free. Pro plans offer unlimited analyses, API access, and deep-dive company cultural alignment reports." },
+    { q: "Is there a bulk API?", a: "Yes, we offer a JSON API for university career centers and recruitment agencies. Contact our enterprise team for documentation and volume pricing." },
+  ];
+
+  return (
+    <div style={{ paddingTop: 64, background: "var(--bg)" }}>
+
+      {/* ══ HERO ══════════════════════════════════════════════ */}
+      <section>
+        <div className="stitch-hero">
+          {/* Left */}
+          <div className="stitch-hero-left">
+            <span className="stitch-eyebrow-pill animate-fade-up">
+              AI-POWERED RESUME INTELLIGENCE
+            </span>
+
+            <h1 className="stitch-h1 animate-fade-up delay-100">
+              Know Your Exact Chances Before You Apply.
+            </h1>
+
+            <p className="stitch-hero-sub animate-fade-up delay-200">
+              Skillgap AI reverse-engineers Applicant Tracking Systems to show you exactly where
+              your resume fails. Get recruiter-level insights in 30 seconds.
+            </p>
+
+            <div className="stitch-cta-row animate-fade-up delay-300">
+              <button id="hero-cta-primary" className="stitch-btn-primary" onClick={onGetStarted}>
+                Analyse My Resume <i className="ti ti-arrow-right" />
+              </button>
+              <button id="hero-cta-sample" className="stitch-btn-outline">
+                See Sample Report
+              </button>
+            </div>
+
+            <p className="stitch-hero-proof animate-fade-up delay-300">
+              <i className="ti ti-users" style={{ color: "var(--accent)" }} />
+              Join 50,000+ job seekers
+            </p>
+
+            <div className="stitch-hero-stats animate-fade-up delay-400">
+              <StatCounter value={2400000} label="Resumes Processed" suffix="+" />
+              <div className="stitch-stat-divider" />
+              <StatCounter value={150} label="Job Roles Covered" suffix="+" />
+            </div>
+
+            {/* Floating verdict badge */}
+            <div className="stitch-verdict-float animate-float-right">
+              <div className="stitch-verdict-card">
+                <div className="stitch-verdict-icon">
+                  <i className="ti ti-check" />
+                </div>
+                <div>
+                  <div className="stitch-verdict-label">VERDICT</div>
+                  <div className="stitch-verdict-value">Apply · 87% Match</div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            {[["✓ Python", "found"], ["✓ Docker", "found"], ["✗ Kubernetes", "missing"]].map(([l, t]) => (
-              <span key={l} className={`wpill ${t}`} style={{ animation: "pillIn 0.35s ease both" }}>{l}</span>
+
+          {/* Right — live analysis widget */}
+          <div className="stitch-hero-right animate-fade-up delay-300">
+            <HeroWidget />
+          </div>
+        </div>
+      </section>
+
+      {/* ══ METRICS BAR ═══════════════════════════════════════ */}
+      <div className="stitch-metrics-bar">
+        <div className="stitch-metrics-inner">
+          <div>
+            <div className="stitch-metric-num">50,000+</div>
+            <div className="stitch-metric-label">Resumes Analyzed</div>
+          </div>
+          <div style={{ borderLeft: "1px solid var(--border)", borderRight: "1px solid var(--border)", padding: "0 32px" }}>
+            <div className="stitch-metric-num">+19pts</div>
+            <div className="stitch-metric-label">Avg. Score Boost</div>
+          </div>
+          <div>
+            <div className="stitch-metric-num">30s</div>
+            <div className="stitch-metric-label">Time to Verdict</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ══ SOCIAL PROOF MARQUEE ══════════════════════════════ */}
+      <div className="stitch-marquee-section">
+        <div className="stitch-marquee-label">Trusted by job seekers at</div>
+        <div className="stitch-marquee-row">
+          <div className="marquee-track">
+            <div className="stitch-marquee-items">
+              {["Google", "Meta", "Stripe", "Notion", "Linear", "Figma", "Airbnb", "Uber", "Netflix", "OpenAI"].map((n) => (
+                <span key={n}>{n}</span>
+              ))}
+            </div>
+            <div className="stitch-marquee-items">
+              {["Google", "Meta", "Stripe", "Notion", "Linear", "Figma", "Airbnb", "Uber", "Netflix", "OpenAI"].map((n) => (
+                <span key={n + "2"}>{n}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ══ FEATURES GRID ════════════════════════════════════ */}
+      <section className="stitch-features-section" id="features">
+        <div className="stitch-section-inner">
+          <div className="stitch-section-head reveal-on-scroll">
+            <h2>Intelligence, not just keywords.</h2>
+            <p>Designed for the modern, high-stakes application process.</p>
+          </div>
+          <div className="stitch-features-grid">
+            {[
+              { icon: "ti-brain",       title: "Semantic Accuracy",    desc: "We don't just match words. Our engine understands context, tech stacks, and implied skills.",                              featured: false },
+              { icon: "ti-bolt",        title: "30s Speed",            desc: "Upload a PDF and get a comprehensive breakdown faster than a recruiter skims your header.",                               featured: false },
+              { icon: "ti-target",      title: "Actionable Verdicts",  desc: "Verdict, not just a score. Get a clear Go/No-Go signal with exactly what to rewrite before you apply.",                  featured: true  },
+              { icon: "ti-shield-lock", title: "Privacy First",        desc: "Zero persistence. Your resume is parsed in memory and destroyed instantly after analysis.",                               featured: false },
+            ].map((f) => (
+              <div key={f.title} className={`stitch-feature-card reveal-on-scroll${f.featured ? " featured" : ""}`}>
+                {f.featured && <div className="stitch-feature-badge">KEY FEATURE</div>}
+                <div className="stitch-feature-icon">
+                  <i className={`ti ${f.icon}`} style={{ fontSize: "1.4rem" }} />
+                </div>
+                <h3>{f.title}</h3>
+                <p>{f.desc}</p>
+              </div>
             ))}
           </div>
         </div>
-      )}
+      </section>
 
-      <style>{`
-        @keyframes pulse{from{opacity:0.35}to{opacity:0.7}}
-        @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-      `}</style>
-    </div>
-  );
-}
+      {/* ══ HOW IT WORKS ═════════════════════════════════════ */}
+      <section className="stitch-hiw-section" id="how-it-works">
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <div className="stitch-section-head reveal-on-scroll">
+            <h2>From job post to decision in 30 seconds</h2>
+            <p>A clinical process for high-stakes applications.</p>
+          </div>
+          <div className="stitch-steps-grid">
+            {[
+              { num: "STEP_01", title: "Upload Resume",     desc: "Drop your technical PDF. We extract semantic vectors, not just keywords." },
+              { num: "STEP_02", title: "Analysis",          desc: "Our engine cross-references your profile against the job's hidden requirements." },
+              { num: "STEP_03", title: "Verdict",           desc: "Get a final go/no-go score with bullet-by-bullet optimization suggestions." },
+            ].map((s) => (
+              <div key={s.num} className="stitch-step-card reveal-on-scroll">
+                <div className="stitch-step-num">{s.num}</div>
+                <h3>{s.title}</h3>
+                <p>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-/* ── Testimonials ─────────────────────────────────────────────── */
-const TESTIMONIALS = [
-  {
-    name: "Aditya Sharma", title: "Final Year, IIT Bombay", initials: "AS",
-    quote: "Was applying blindly to 50+ companies. SkillGap showed I was missing Kubernetes and FastAPI. Interview rate: 2% → 22%.", tag: "Resume Matching"
-  },
-  {
-    name: "Priya Mehta", title: "Software Engineer, Bengaluru", initials: "PM",
-    quote: "The bullet rewriter kept my real metrics intact but finally made them land. Shortlisted at 3 product companies in a week.", tag: "Bullet Rewriter"
-  },
-  {
-    name: "Rahul Verma", title: "Finance → Tech, Delhi", initials: "RV",
-    quote: "Alternate Job Titles told me I was an 78% match for Business Analyst — not PM at 51%. That clarity saved months.", tag: "Alternate Titles"
-  },
-  {
-    name: "Sneha Iyer", title: "MCA Graduate, Pune", initials: "SI",
-    quote: "Completeness score was 61% — missing a Summary and zero quantified bullets. Fixed those, ATS pass rate improved visibly.", tag: "Completeness"
-  },
-  {
-    name: "Karan Nair", title: "B.Tech CSE, NIT Trichy", initials: "KN",
-    quote: "20 roles, zero calls. Match was at 48%. Tailored once, jumped to 79%. Got 4 interview calls in a week.", tag: "Score Boost"
-  },
-];
+      {/* ══ SAMPLE REPORT PREVIEW ════════════════════════════ */}
+      <section className="stitch-sample-section reveal-on-scroll">
+        <div className="stitch-sample-header">
+          <div style={{ maxWidth: 480 }}>
+            <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.5rem, 2.5vw, 2rem)", marginBottom: 12 }}>
+              What your report looks like.
+            </h2>
+            <p style={{ color: "var(--text-2)", fontSize: "0.95rem" }}>
+              Comprehensive, technical, and actionable. No generic fluff — just the data you need to win.
+            </p>
+          </div>
+          <div className="stitch-sample-tags">
+            <span className="stitch-tag">PDF EXPORT</span>
+            <span className="stitch-tag">JSON API</span>
+          </div>
+        </div>
 
-function TestimonialsCarousel() {
-  const [current, setCurrent] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setCurrent(c => (c + 1) % TESTIMONIALS.length), 3800);
-    return () => clearInterval(id);
-  }, []);
-  const visible = [0, 1, 2].map(i => TESTIMONIALS[(current + i) % TESTIMONIALS.length]);
-
-  return (
-    <div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "1px", background: "var(--border)", borderRadius: 12, overflow: "hidden", marginBottom: "2rem" }}>
-        {visible.map((t, idx) => (
-          <div key={`${t.name}-${idx}`} style={{ padding: "2rem", background: "var(--bg2)", animation: "fadeSlide 0.4s ease both", animationDelay: `${idx * 60}ms` }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
-              <div style={{
-                width: 38, height: 38, borderRadius: "50%", background: "rgba(201,245,59,0.1)",
-                color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "0.78rem", fontWeight: 500, flexShrink: 0
-              }}>{t.initials}</div>
-              <div>
-                <div style={{ fontWeight: 500, fontSize: "0.9rem" }}>{t.name}</div>
-                <div style={{ fontSize: "0.75rem", color: "var(--text-2)" }}>{t.title}</div>
+        <div className="stitch-sample-grid">
+          {/* Column 1 — Score */}
+          <div className="stitch-sample-col">
+            <div className="stitch-sample-col-header">MATCH_STRENGTH</div>
+            <div className="stitch-score-big">88</div>
+            <div className="stitch-score-verdict">Strong Fit</div>
+            <p className="stitch-score-desc">Top 5% of all applicants for this specific role and seniority.</p>
+            <div className="stitch-subscores">
+              <div className="stitch-subscore-row">
+                <span>Skills Match</span>
+                <span style={{ color: "var(--accent)" }}>92%</span>
+              </div>
+              <div className="stitch-subscore-row">
+                <span>Experience Depth</span>
+                <span style={{ color: "var(--accent-2)" }}>74%</span>
               </div>
             </div>
-            <div style={{ color: "var(--accent)", fontSize: "0.75rem", marginBottom: "0.75rem" }}>★★★★★</div>
-            <p style={{ color: "var(--text-2)", fontSize: "0.87rem", lineHeight: 1.75, fontStyle: "italic", marginBottom: "1rem" }}>"{t.quote}"</p>
-            <span className="badge badge-default" style={{ fontSize: "0.68rem" }}>{t.tag}</span>
           </div>
-        ))}
-      </div>
-      <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem" }}>
-        {TESTIMONIALS.map((_, i) => (
-          <button key={i} onClick={() => setCurrent(i)} style={{
-            width: i === current ? 22 : 7, height: 7, borderRadius: 4,
-            background: i === current ? "var(--accent)" : "rgba(255,255,255,0.12)",
-            border: "none", cursor: "pointer", transition: "all 0.3s"
-          }} />
-        ))}
-      </div>
-    </div>
-  );
-}
 
-/* ── FAQ ──────────────────────────────────────────────────────── */
-const FAQS = [
-  { q: "Is my resume stored after analysis?", a: "No. Resume data is processed in-session and purged immediately after your analysis is complete. Nothing is stored beyond the response window." },
-  { q: "What makes this different from an ATS keyword scanner?", a: "ATS scanners match literal words. SkillGap uses sentence-transformer models — the same architecture behind Google Search — to understand meaning. 'Built ensemble models' and 'XGBoost experience' match correctly." },
-  { q: "How accurate is the hiring probability?", a: "It's calibrated on domain benchmarks and accounts for cosine match, seniority alignment, keyword density, and experience delta. 94% of users rated it useful. It's a rigorous estimate, not a guarantee." },
-  { q: "What industries does SkillGap support?", a: "Optimised for tech, software, data science, and product roles. Finance, healthcare, and consulting are on the roadmap." },
-  { q: "What file formats are accepted?", a: "PDF upload and plain-text paste. You can also paste a LinkedIn or Indeed URL and we'll extract the JD automatically." },
-  { q: "Is there a free tier?", a: "Your first analysis is free with no account required. Create a free account to save history and access additional analyses." },
-];
-
-function Accordion({ items }) {
-  const [open, setOpen] = useState(null);
-  return (
-    <div style={{ maxWidth: 700, margin: "0 auto" }}>
-      {items.map((item, i) => (
-        <div key={i} className={`accordion-item${open === i ? " open" : ""}`}>
-          <button className="accordion-trigger" onClick={() => setOpen(open === i ? null : i)}>
-            {item.q}
-            <span className="accordion-icon">+</span>
-          </button>
-          {open === i && <div className="accordion-body" style={{ animation: "fadeSlide 0.18s ease" }}>{item.a}</div>}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ── Demo tabs ────────────────────────────────────────────────── */
-function DemoSection() {
-  const [tab, setTab] = useState("overview");
-  return (
-    <div>
-      <div className="tab-bar" style={{ maxWidth: 640, margin: "0 auto 1.75rem" }}>
-        {[["overview", "Match Overview"], ["skills", "Skill Gap"], ["bullets", "Rewritten Bullets"], ["titles", "Alternate Titles"]].map(([id, label]) => (
-          <button key={id} className={`tab-btn${tab === id ? " active" : ""}`} onClick={() => setTab(id)}>{label}</button>
-        ))}
-      </div>
-
-      {tab === "overview" && (
-        <div className="tab-content" style={{ padding: "2rem", background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 12 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "auto 1fr 1fr", gap: "2.5rem", alignItems: "center" }}>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontFamily: "var(--font-serif)", fontSize: "4.5rem", color: "var(--accent)", lineHeight: 1 }}>73%</div>
-              <div style={{ fontSize: "0.72rem", color: "var(--text-2)", marginTop: "0.3rem" }}>Hiring Probability · ±5%</div>
-            </div>
+          {/* Column 2 — Skill Gap */}
+          <div className="stitch-sample-col" style={{ background: "var(--bg2)" }}>
+            <div className="stitch-sample-col-header">SEMANTIC_GAP_ANALYSIS</div>
+            <div className="stitch-found-label"><i className="ti ti-circle-check" /> FOUND COMPETENCIES (12)</div>
             <div>
-              <div style={{ fontSize: "0.75rem", color: "var(--text-2)", marginBottom: "0.3rem" }}>Semantic Match Score</div>
-              <div style={{ fontFamily: "var(--font-serif)", fontSize: "2.2rem", color: "var(--text)" }}>0.74</div>
-              <div style={{ fontSize: "0.75rem", color: "var(--text-2)", margin: "1rem 0 0.3rem" }}>Resume Completeness</div>
-              <div className="progress-bar-wrap"><div className="progress-bar-fill" style={{ width: "82%" }} /></div>
-              <div style={{ fontSize: "0.72rem", color: "var(--text-2)", marginTop: "0.3rem" }}>82 / 100</div>
+              {["React/Next.js", "TypeScript", "GraphQL", "Node.js", "PostgreSQL"].map((s) => (
+                <span key={s} className="stitch-chip-found">{s}</span>
+              ))}
             </div>
+            <div className="stitch-missing-label"><i className="ti ti-alert-circle" /> MISSING KEYWORDS (4)</div>
             <div>
-              {[["Strong Python background", "+12%", "pos"], ["ML experience aligns", "+9%", "pos"], ["Kubernetes not found", "−8%", "neg"]].map(([l, v, t]) => (
-                <div key={l} className={`factor-row ${t}`}>
-                  <div className={`factor-dot ${t}`}>{t === "pos" ? "▲" : "▼"}</div>
-                  <div className="factor-text" style={{ fontSize: "0.82rem" }}>{l}</div>
-                  <div className="factor-val">{v}</div>
-                </div>
+              {["Serverless", "E2E Testing", "Terraform"].map((s) => (
+                <span key={s} className="stitch-chip-missing">{s}</span>
               ))}
             </div>
           </div>
-        </div>
-      )}
 
-      {tab === "skills" && (
-        <div className="tab-content" style={{ padding: "2rem", background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 12 }}>
-          <p style={{ color: "var(--text-2)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>10 skills required · 5 found · 5 missing</p>
-          <div className="skills-split">
-            <div>
-              <div className="skills-col-header found-header">✓ Skills Found</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                {["Python", "Docker", "ML", "React", "AWS"].map(s => <span key={s} className="skill-pill found">✓ {s}</span>)}
-              </div>
+          {/* Column 3 — Bullet Rewrite Lab */}
+          <div className="stitch-sample-col">
+            <div className="stitch-sample-col-header">BULLET_REWRITE_LAB</div>
+            <div className="stitch-bullet-before">
+              <p>"Responsible for building the frontend components using React."</p>
             </div>
-            <div>
-              <div className="skills-col-header missing-header">✗ Skills Missing</div>
-              <div className="priority-group">
-                <div className="priority-label" style={{ color: "var(--red)" }}>🔴 Critical</div>
-                <div style={{ display: "flex", gap: "0.5rem" }}>{["Kubernetes", "FastAPI"].map(s => <span key={s} className="skill-pill missing">✗ {s}</span>)}</div>
-              </div>
-              <div className="priority-group">
-                <div className="priority-label" style={{ color: "var(--amber)" }}>🟡 Important</div>
-                <div style={{ display: "flex", gap: "0.5rem" }}>{["Redis", "PostgreSQL"].map(s => <span key={s} className="skill-pill missing">✗ {s}</span>)}</div>
-              </div>
+            <div className="stitch-bullet-after">
+              <p>"Engineered a scalable component library using React/TypeScript, improving design-to-code efficiency by 30%."</p>
             </div>
           </div>
-        </div>
-      )}
-
-      {tab === "bullets" && (
-        <div className="tab-content" style={{ padding: "2rem", background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 12 }}>
-          {[
-            ["Worked on ML models for prediction tasks", "Architected and deployed ensemble ML models (XGBoost + Random Forest) for real-time prediction pipelines, improving accuracy by 18% across 3 production environments"],
-            ["Helped with backend API development", "Engineered 12+ RESTful API endpoints serving 50K daily requests, reducing latency from 340ms to 85ms via Redis caching"],
-          ].map(([orig, rew], i) => (
-            <div key={i} style={{ marginBottom: "1.5rem" }}>
-              <div className="bullet-pair">
-                <div className="bullet-before"><div className="bullet-label before-label">Original</div>{orig}</div>
-                <div className="bullet-after"><div className="bullet-label after-label">AI Rewritten ✦</div>{rew}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {tab === "titles" && (
-        <div className="tab-content">
-          {[["AI/ML Intern", 91], ["Python Developer", 83], ["ML Engineer", 81], ["Backend Engineer", 78], ["Data Scientist", 74]].map(([title, pct], i) => (
-            <div key={i} className="alt-title-card" style={{ animationDelay: `${i * 55}ms` }}>
-              <div className="alt-rank">0{i + 1}</div>
-              <div className="alt-info">
-                <div className="alt-title-name">{title}</div>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                  <div className="match-bar-wrap" style={{ width: 160 }}><div className="match-bar-fill" style={{ width: `${pct}%` }} /></div>
-                  <span style={{ fontWeight: 500, color: "var(--accent)", fontSize: "0.85rem" }}>{pct}%</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ══════════════════════════════════════════
-   MAIN LANDING PAGE
-══════════════════════════════════════════ */
-export default function LandingPage({ onGetStarted, onGuestResult }) {
-  const [modal, setModal] = useState(false);
-
-  return (
-    <div>
-      {modal && <SampleReportModal onClose={() => setModal(false)} />}
-
-      {/* ── HERO ── */}
-      <section className="hero">
-        <div className="hero-grid-lines" />
-        <div className="hero-fade" />
-        <div className="hero-inner">
-          <div>
-            {/* eyebrow */}
-            <div className="hero-eyebrow">
-              <span className="badge badge-accent" style={{ fontSize: "0.7rem" }}>
-                ✦ AI-Powered Resume Intelligence
-              </span>
-            </div>
-
-            {/* headline */}
-            <h1 className="hero-title">
-              Know Your Exact
-              <br />
-              <span className="accent-text">Chances</span>{" "}
-              <span className="gradient-text">Before You Apply.</span>
-            </h1>
-
-            <p className="hero-sub">
-              SkillGap AI compares your resume against any job description using
-              semantic AI — not keyword matching. Get your hiring probability,
-              missing skills, AI-rewritten bullets, and smarter alternate titles
-              in under 30 seconds.
-            </p>
-
-            <div className="hero-ctas">
-              <button className="btn-primary btn-lg" onClick={onGetStarted}>
-                Analyse My Resume →
-              </button>
-              <button className="btn-ghost btn-lg" onClick={() => setModal(true)}>
-                See a Sample Report
-              </button>
-            </div>
-
-            <p className="hero-proof">
-              🔒 No account needed · Free analysis · No resume stored after session
-            </p>
-
-            <div className="hero-stats">
-              <StatCounter value={12400} label="Resumes Analysed" suffix="+" />
-              <StatCounter value={94} label="User Satisfaction" suffix="%" />
-              <StatCounter value={8} label="Sec Avg Time" />
-            </div>
-          </div>
-
-          <LandingAnalysisWidget onGuestResult={onGuestResult} />
         </div>
       </section>
 
-      {/* ── TRUST STRIP ── */}
-      <div className="trust-strip">
-        <div className="trust-strip-inner">
-          <span className="trust-strip-label">Trusted by students from</span>
-          {["IIT Bombay", "IIT Delhi", "NIT Trichy", "BITS Pilani", "VIT Vellore", "IIIT Hyderabad"].map(n => (
-            <span key={n} className="trust-logo">{n}</span>
-          ))}
+      {/* ══ TESTIMONIALS MARQUEE ════════════════════════════ */}
+      <section className="stitch-testimonials-section">
+        <div style={{ maxWidth: 1440, margin: "0 auto", textAlign: "center", marginBottom: 48 }}>
+          <h2 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(1.5rem, 2.5vw, 2rem)", marginBottom: 10 }}>
+            Outcome reports
+          </h2>
+          <p style={{ color: "var(--text-2)", fontSize: "0.95rem" }}>Measured success from our early cohort.</p>
+        </div>
+
+        {/* Row 1 — left scroll */}
+        <div style={{ overflow: "hidden", marginBottom: 16 }}>
+          <div className="marquee-track" style={{ gap: 16 }}>
+            {[...TESTIMONIALS_ROW1, ...TESTIMONIALS_ROW1].map((t, i) => (
+              <TestimonialCard key={i} {...t} />
+            ))}
+          </div>
+        </div>
+
+        {/* Row 2 — right scroll */}
+        <div style={{ overflow: "hidden" }}>
+          <div className="marquee-track-reverse" style={{ gap: 16 }}>
+            {[...TESTIMONIALS_ROW2, ...TESTIMONIALS_ROW2].map((t, i) => (
+              <TestimonialCard key={i} {...t} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ PRICING ══════════════════════════════════════════ */}
+      <section className="stitch-pricing-section" id="pricing">
+        <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+          <div className="stitch-section-head reveal-on-scroll">
+            <h2>Simple, transparent pricing.</h2>
+            <p>Invest in your career trajectory.</p>
+          </div>
+          <div className="stitch-pricing-grid">
+            {/* Free */}
+            <div className="stitch-pricing-card reveal-on-scroll">
+              <h3>Free Forever</h3>
+              <p className="sub">For job seekers testing the waters.</p>
+              <div className="stitch-price-num">$0</div>
+              <ul className="stitch-pricing-list">
+                <li><i className="ti ti-check" /> 3 Scans per month</li>
+                <li><i className="ti ti-check" /> Basic gap analysis</li>
+                <li><i className="ti ti-check" /> PDF export</li>
+              </ul>
+              <button id="pricing-free-btn" className="stitch-pricing-btn-free" onClick={onGetStarted}>
+                Get Started Free
+              </button>
+            </div>
+
+            {/* Pro */}
+            <div className="stitch-pricing-card popular reveal-on-scroll">
+              <div className="stitch-popular-pill">POPULAR</div>
+              <h3>Pro</h3>
+              <p className="sub">For serious applicants optimizing every application.</p>
+              <div className="stitch-price-num">
+                ₹299 <span style={{ fontSize: "1rem", color: "var(--text-2)", fontFamily: "var(--font-sans)" }}>/mo</span>
+              </div>
+              <ul className="stitch-pricing-list">
+                <li><i className="ti ti-check" /> Unlimited Scans</li>
+                <li><i className="ti ti-check" /> AI Bullet Rewriter</li>
+                <li><i className="ti ti-check" /> Career Pathing insights</li>
+                <li><i className="ti ti-check" /> Priority support</li>
+              </ul>
+              <button id="pricing-pro-btn" className="stitch-pricing-btn-pro" onClick={onGetStarted}>
+                Upgrade to Pro
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ FAQ ══════════════════════════════════════════════ */}
+      <section className="stitch-faq-section" id="faq">
+        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+          <h2 style={{
+            fontFamily: "var(--font-serif)",
+            fontSize: "clamp(1.5rem, 2.5vw, 2rem)",
+            textAlign: "center",
+            marginBottom: 48
+          }}>
+            Frequently asked questions
+          </h2>
+          <div className="stitch-faq-list">
+            {FAQS.map((f, i) => <FaqItem key={i} q={f.q} a={f.a} />)}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ FINAL CTA BAND ═══════════════════════════════════ */}
+      <div className="stitch-cta-band">
+        <div className="stitch-cta-inner reveal-on-scroll">
+          <h2>Stop applying blind. Start applying smarter.</h2>
+          <p>Get your first deep-dive gap analysis report for free today.</p>
+          <button id="final-cta-btn" className="stitch-cta-btn" onClick={onGetStarted}>
+            Analyse My Resume <i className="ti ti-rocket" />
+          </button>
         </div>
       </div>
 
-      {/* ── HOW IT WORKS ── */}
-      <section className="section">
-        <div className="eyebrow section-title" style={{ marginBottom: "0.75rem" }}>Process</div>
-        <h2 className="section-title">How SkillGap AI Works</h2>
-        <p className="section-sub">Three inputs. One intelligence report. Under 30 seconds.</p>
-
-        <div className="steps-row">
-          {[
-            { num: "01", icon: "📄", title: "Upload Your Resume", desc: "Upload your PDF or paste plain text. Our parser extracts skills, experience, and education automatically." },
-            { num: "02", icon: "🔗", title: "Paste the Job Description", desc: "Drop in any job description — or paste a LinkedIn / Indeed URL and we'll scrape it for you." },
-            { num: "03", icon: "📊", title: "Get Your Intelligence Report", desc: "Receive hiring probability, skill gap analysis, AI-rewritten bullets, and alternate title suggestions." },
-          ].map(s => (
-            <div key={s.num} className="step-card">
-              <span className="step-num">{s.num}</span>
-              <span className="step-icon">{s.icon}</span>
-              <div className="step-title">{s.title}</div>
-              <p className="step-desc">{s.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <hr className="divider" />
-
-      {/* ── FEATURES BENTO ── */}
-      <section className="section" id="features">
-        <div className="eyebrow section-title" style={{ marginBottom: "0.75rem" }}>Capabilities</div>
-        <h2 className="section-title">Everything You Need to Get Hired</h2>
-        <p className="section-sub">Four live features. Two powerful ones coming soon.</p>
-
-        <div className="bento">
-          {[
-            {
-              size: "bento-large", icon: "🎯", title: "Semantic Resume Matching",
-              desc: "Goes beyond keywords. Our sentence-transformer model understands that 'built predictive models' matches 'XGBoost experience'. Get a precise hiring probability with calibrated confidence.", tag: "Available", coming: false
-            },
-            {
-              size: "bento-large", icon: "🔍", title: "Ranked Missing Skills Report",
-              desc: "See exactly which skills are absent — tagged Critical, Important, or Nice-to-Have based on frequency and position in the JD. Know what to learn before you apply.", tag: "Available", coming: false
-            },
-            {
-              size: "bento-medium", icon: "✍️", title: "AI Bullet Rewriter",
-              desc: "Every bullet rewritten to match JD keywords. Factual content preserved — just made compelling.", tag: "Available", coming: false
-            },
-            {
-              size: "bento-medium", icon: "🗂️", title: "Alternate Role Suggestions",
-              desc: "Discover the 5 roles you're best qualified for right now — with match percentages.", tag: "Available", coming: false
-            },
-            {
-              size: "bento-medium", icon: "📝", title: "AI Resume Writer",
-              desc: "Write a fully ATS-optimised resume from scratch or let AI enhance your existing one.", tag: "Coming Soon", coming: true
-            },
-            {
-              size: "bento-medium", icon: "📊", title: "ATS Score & Fixes",
-              desc: "ATS compatibility score with specific, actionable suggestions to improve formatting.", tag: "Coming Soon", coming: true
-            },
-          ].map(f => (
-            <div key={f.title} className={`${f.size} feature-card${f.coming ? " coming-soon" : ""}`}>
-              <div style={{ marginBottom: "0.75rem" }}>
-                <span className={`badge ${f.coming ? "badge-default" : "badge-accent"}`} style={{ fontSize: "0.68rem" }}>
-                  {f.tag}
-                </span>
-              </div>
-              <span className="feature-icon">{f.icon}</span>
-              <div className="feature-title">{f.title}</div>
-              <p className="feature-desc">{f.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <hr className="divider" />
-
-      {/* ── LIVE DEMO ── */}
-      <section className="section">
-        <div className="eyebrow section-title" style={{ marginBottom: "0.75rem" }}>Real Output</div>
-        <h2 className="section-title">See a Real Analysis</h2>
-        <p className="section-sub">Here's what your report looks like — powered by real AI output.</p>
-        <DemoSection />
-      </section>
-
-      <hr className="divider" />
-
-      {/* ── TESTIMONIALS ── */}
-      <section className="section">
-        <div className="eyebrow section-title" style={{ marginBottom: "0.75rem" }}>User Stories</div>
-        <h2 className="section-title">What Our Users Say</h2>
-        <p className="section-sub">Real results from students and professionals across India.</p>
-        <TestimonialsCarousel />
-      </section>
-
-      <hr className="divider" />
-
-      {/* ── COMPARISON ── */}
-      <section className="section">
-        <div className="eyebrow section-title" style={{ marginBottom: "0.75rem" }}>Comparison</div>
-        <h2 className="section-title">SkillGap AI vs Everything Else</h2>
-        <p className="section-sub">Keyword matching is not enough.</p>
-        <div style={{ overflowX: "auto", border: "1px solid var(--border)", borderRadius: 12 }}>
-          <table className="compare-table">
-            <thead>
-              <tr>
-                <th>Feature</th>
-                <th className="col-skillgap-head">⚡ SkillGap AI</th>
-                <th>Generic ATS</th>
-                <th>ChatGPT</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["Semantic understanding", "✅ Sentence-transformer embeddings", "❌ Keyword match only", "⚠️ Generic"],
-                ["Hiring probability", "✅ Calibrated % with confidence", "❌ Not available", "❌ Not available"],
-                ["Ranked skill gap", "✅ Critical / Important / Nice-to-Have", "⚠️ Basic list", "⚠️ Ad hoc"],
-                ["AI bullet rewriter", "✅ JD-aligned, fact-preserving", "❌ Not available", "⚠️ No JD context"],
-                ["Alternate job titles", "✅ Vector similarity ranked", "❌ Not available", "❌ Not available"],
-                ["Speed", "✅ Under 30 seconds", "✅ Fast", "⚠️ Manual prompting"],
-              ].map(([f, sg, ats, gpt]) => (
-                <tr key={f}>
-                  <td style={{ fontWeight: 500, color: "var(--text)" }}>{f}</td>
-                  <td className="col-skillgap">{sg}</td>
-                  <td>{ats}</td>
-                  <td>{gpt}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <hr className="divider" />
-
-      {/* ── FAQ ── */}
-      <section className="section">
-        <div className="eyebrow section-title" style={{ marginBottom: "0.75rem" }}>FAQ</div>
-        <h2 className="section-title">Frequently Asked Questions</h2>
-        <p className="section-sub" style={{ marginBottom: "3rem" }}>Everything you need to know.</p>
-        <Accordion items={FAQS} />
-      </section>
-
-      {/* ── CTA BAND ── */}
-      <section className="cta-band">
-        <div style={{ maxWidth: 580, margin: "0 auto" }}>
-          <div style={{ marginBottom: "1.5rem" }}>
-            <span className="badge badge-accent">✦ Free to start</span>
-          </div>
-          <h2 style={{ marginBottom: "1rem" }}>Ready to Stop Guessing?</h2>
-          <p>Get your semantic match score, skill gap report, and AI-rewritten bullets in under 30 seconds.</p>
-          <button className="btn-primary btn-lg" onClick={onGetStarted} style={{ marginBottom: "1rem" }}>
-            Analyse My Resume — It's Free →
-          </button>
-          <p className="cta-microcopy">No credit card · No account required · Instant results</p>
-        </div>
-      </section>
     </div>
   );
 }
