@@ -390,7 +390,7 @@ export default function ResultDetail({ result }) {
       />
 
       {/* Score Hero (Minimized) */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", alignItems: "start", marginBottom: "2rem" }}>
+      <div className="result-summary-grid">
         <div className="stack">
           <div className="score-box" style={{ background: "rgba(99, 102, 241, 0.05)" }}>
             <span>Resume Completeness</span>
@@ -440,7 +440,7 @@ export default function ResultDetail({ result }) {
       {/* OVERVIEW SECTION REDESIGN */}
       {tab === "overview" && (
         <div className="tab-content">
-          <div className="workspace-grid" style={{ gridTemplateColumns: "1.4fr 0.6fr", gap: "2rem" }}>
+          <div className="inner-workspace-grid">
             <div className="stack">
               <DetailedText label="Analyzed Job Description" text={result.jd_text || "No description provided."} sourceUrl={result.jd_source_url} limit={800} />
 

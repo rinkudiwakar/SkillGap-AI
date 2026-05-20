@@ -15,6 +15,11 @@ import CareersPage from "./pages/CareersPage";
 import BlogPage from "./pages/BlogPage";
 import HowItWorksPage from "./pages/HowItWorksPage";
 import FeaturesPage from "./pages/FeaturesPage";
+import DropZone from "./components/DropZone";
+import WordCount from "./components/WordCount";
+import DashboardTabs from "./components/dashboard/DashboardTabs";
+import MetricGrid from "./components/dashboard/MetricGrid";
+import WorkspaceTopbar from "./components/dashboard/WorkspaceTopbar";
 
 // ── Helpers ──────────────────────────────────────────────────────────
 function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -151,34 +156,6 @@ function InsightCard({ title, body }) {
       <p style={{ color: "var(--muted)", fontSize: "0.9rem", whiteSpace: "pre-wrap", lineHeight: 1.7 }}>{body}</p>
     </div>
   );
-}
-
-// ── Drop Zone ─────────────────────────────────────────────────────────
-function DropZone({ file, onChange }) {
-  const inputRef = useRef(null);
-  const [dragging, setDragging] = useState(false);
-  const handleDrop = (e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files?.[0]; if (f) onChange(f); };
-  return (
-    <div>
-      <div className={`dropzone-area${dragging ? " active" : ""}`} onClick={() => inputRef.current?.click()} onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={handleDrop}>
-        <div className="dropzone-icon">📄</div>
-        <div className="dropzone-label">Drop your PDF here, or <strong>click to browse</strong></div>
-        <div style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.4rem" }}>Accepted: PDF only · Max 5MB · Not stored after session</div>
-        <input ref={inputRef} type="file" accept="application/pdf" style={{ display: "none" }} onChange={e => onChange(e.target.files?.[0] || null)} />
-      </div>
-      {file && (
-        <div className="file-preview"><span className="check">✓</span><span style={{ fontWeight: 500 }}>{file.name}</span><span style={{ color: "var(--muted)", fontSize: "0.8rem", marginLeft: "auto" }}>{(file.size / 1024).toFixed(0)} KB</span></div>
-      )}
-    </div>
-  );
-}
-
-// ── Word Count ────────────────────────────────────────────────────────
-function WordCount({ text }) {
-  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-  const cls = words > 100 ? "ok" : words > 30 ? "" : "warn";
-  const msg = words === 0 ? "" : words > 100 ? `${words} words — Good JD length ✓` : `${words} words — paste more for better results`;
-  return msg ? <div className={`word-count ${cls}`}>{msg}</div> : null;
 }
 
 // ── Main App ──────────────────────────────────────────────────────────
@@ -735,58 +712,31 @@ function App() {
   // ── DASHBOARD (authenticated) ──
   return (
     <div className="app-shell">
-      {/* Top Bar */}
-      <div className="topbar">
-        <div className="topbar-logo" style={{ cursor: "pointer" }} onClick={() => setPage("home")}>
-          <div className="logo-dot" />
-          SkillGap AI
-        </div>
-        <div className="topbar-actions">
-          <div className="chip-stack">
-            <span className="chip">{resumes.length} resumes</span>
-            <span className="chip">{matchResults.length} analyses</span>
-            <span className="chip">{applications.length} applications</span>
-          </div>
-          <div className="account-menu">
-            <button className="account-trigger" onClick={() => setAccountMenuOpen(v => !v)} type="button" aria-expanded={accountMenuOpen}>
-              <span className="account-avatar">
-                {profile.profile_picture_url ? <img src={profile.profile_picture_url} alt="" /> : avatarLabel}
-              </span>
-              <span className="account-name">{displayName}</span>
-              <span className="account-caret">v</span>
-            </button>
-            {accountMenuOpen && (
-              <div className="account-dropdown">
-                <div className="account-card-head">
-                  <span className="account-avatar large">
-                    {profile.profile_picture_url ? <img src={profile.profile_picture_url} alt="" /> : avatarLabel}
-                  </span>
-                  <div>
-                    <strong>{displayName}</strong>
-                    <span>{session.user.email}</span>
-                  </div>
-                </div>
-                <button type="button" onClick={() => avatarInputRef.current?.click()}>Upload profile picture</button>
-                <button type="button" onClick={() => { setActiveTab("profile"); setAccountMenuOpen(false); }}>Profile settings</button>
-                <button type="button" onClick={() => { setPage("home"); setAccountMenuOpen(false); }}>Go to homepage</button>
-                <button type="button" className="danger" onClick={handleSignOut}>Sign out</button>
-              </div>
-            )}
-            <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleProfilePictureUpload} style={{ display: "none" }} />
-          </div>
-        </div>
-      </div>
+      <WorkspaceTopbar
+        stats={[
+          { label: "resumes", value: resumes.length },
+          { label: "analyses", value: matchResults.length },
+          { label: "applications", value: applications.length },
+        ]}
+        profile={profile}
+        displayName={displayName}
+        avatarLabel={avatarLabel}
+        session={session}
+        accountMenuOpen={accountMenuOpen}
+        onToggleAccountMenu={() => setAccountMenuOpen(v => !v)}
+        onGoHome={() => { setPage("home"); setAccountMenuOpen(false); }}
+        onUploadAvatar={() => avatarInputRef.current?.click()}
+        onOpenProfile={() => { setActiveTab("profile"); setAccountMenuOpen(false); }}
+        onSignOut={handleSignOut}
+        avatarInputRef={avatarInputRef}
+        onAvatarChange={handleProfilePictureUpload}
+      />
 
       <div className="workspace">
         {authMessage && <div className="app-message" style={{ marginBottom: "1rem" }}>{authMessage}</div>}
         {dashboardLoading && <p className="status-note" style={{ marginBottom: "1rem" }}>Refreshing workspace data…</p>}
 
-        {/* Dashboard Tabs */}
-        <div className="dash-tabs">
-          {DASH_TABS.map(t => (
-            <button key={t.id} className={`dash-tab${activeTab === t.id ? " active" : ""}`} onClick={() => setActiveTab(t.id)}>{t.label}</button>
-          ))}
-        </div>
+        <DashboardTabs tabs={DASH_TABS} activeTab={activeTab} onChange={setActiveTab} />
 
         {/* ── ANALYSIS TAB ── */}
         {activeTab === "analysis" && (
@@ -887,7 +837,7 @@ function App() {
                       {i.jd_source_url || "Direct upload"}
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", color: "var(--muted)" }}>
-                      <span>Score: {formatPercent(i.match_score)}</span>
+                      <span>Similarity: {formatPercent(i.match_score)}</span>
                       <span>{formatDate(i.created_at)}</span>
                     </div>
                   </button>
@@ -895,7 +845,7 @@ function App() {
               </div>
             </div>
             <div className="panel" style={{ minHeight: 600 }}>
-              <div className="panel-heading"><div><div className="eyebrow">Deep Dive</div><h3>{fixRoleTitle(analysisResult?.jd_role)}</h3></div></div>
+              <div className="panel-heading"><div><div className="eyebrow">Deep Dive</div><h3>Report Details</h3></div></div>
               {analysisResult ? (
                 <>
                   <ResultDetail result={analysisResult} />
@@ -1002,11 +952,7 @@ function App() {
             </div>
             <div className="panel">
               <div className="panel-heading"><div><div className="eyebrow">Snapshot</div><h3>Workspace Summary</h3></div></div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-                {[["Saved Resumes", resumes.length], ["Completed Analyses", matchResults.length], ["Tracked Applications", applications.length], ["Average Match", formatPercent(averageMatch)]].map(([label, val]) => (
-                  <div key={label} className="score-box"><span>{label}</span><strong style={{ fontSize: "1.6rem" }}>{val}</strong></div>
-                ))}
-              </div>
+              <MetricGrid items={[["Saved Resumes", resumes.length], ["Completed Analyses", matchResults.length], ["Tracked Applications", applications.length], ["Average Match", formatPercent(averageMatch)]]} />
               {topMatch && (
                 <div style={{ marginTop: "1rem" }} className="score-box">
                   <span>Best Match</span>

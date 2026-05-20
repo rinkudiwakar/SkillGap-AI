@@ -1,0 +1,62 @@
+/* SkillGap AI — Tailwind Design System v3.0 */
+/* Technical Precision — Mint green accent, dark surfaces, flat design */
+
+@import './tailwind.css';
+
+/* ------------------------------------------------------------------- */
+/* LEGACY CLASS SUPPORT (For backward compatibility during migration) */
+/* ------------------------------------------------------------------- */
+
+/* Legacy CSS variables (mapped to Tailwind values) */
+:root {
+  --bg: #0D0E0F;
+  --bg2: #141516;
+  --bg3: #1C1E20;
+  --text: #F0EDE8;
+  --text-2: #8B8880;
+  --text-3: #555250;
+  --muted: #8B8880;
+  --accent: #5DCAA5;
+  --accent-dim: rgba(93, 202, 165, 0.12);
+  --accent-text: #0D0E0F;
+  --green: #5DCAA5;
+  --red: #EF4444;
+  --amber: #F59E0B;
+  --blue: #60A5FA;
+  --border: #2A2D30;
+  --border-h: rgba(255, 255, 255, 0.16);
+  --surface: rgba(255, 255, 255, 0.04);
+  --surface-h: rgba(255, 255, 255, 0.065);
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-sans: 'Syne', system-ui, sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+/* Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+button {
+  border: none;
+  background: none;
+}
+
+a {
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+#root {
+  min-height: 100vh;
+}
