@@ -5,76 +5,40 @@
 
 ## Table of Contents
 1. [Executive Summary & Elevator Pitches](#1-executive-summary--elevator-pitches)
-   - 30-Second Elevator Pitch
-   - 2-Minute Deep-Dive Pitch
-   - Resume Bullet Points & Key Metrics
 2. [Problem Statement & Market Rationale](#2-problem-statement--market-rationale)
-   - Why Traditional ATS Keyword Scanners Fail
-   - Why Naive "Ask ChatGPT" Approaches Fail
-   - The SkillGap AI Value Proposition
 3. [System Architecture & Data Flow](#3-system-architecture--data-flow)
-   - High-Level Architecture Diagram
-   - End-to-End Request Lifecycle (10 Distinct Steps)
-   - Component Breakdown & Separation of Concerns
-4. [Tech Stack Deep-Dive & Architectural Trade-offs ("Why X over Y?")](#4-tech-stack-deep-dive--architectural-trade-offs)
-   - Backend: FastAPI vs. Flask vs. Django
-   - Task Queue: Celery + Redis vs. In-Process BackgroundTasks vs. Kafka
-   - Embeddings: Sentence-Transformers (`all-MiniLM-L6-v2`) vs. OpenAI vs. TF-IDF/BM25
-   - LLM Orchestration: Groq (Llama 3.3-70B) + Together AI Fallback vs. OpenAI GPT-4o
-   - Single Comprehensive LLM Call vs. Multi-Agent Chain Chaining
-   - Database: Supabase (PostgreSQL) vs. MongoDB vs. DynamoDB
-   - Storage Strategy: Ephemeral In-Memory/Temp PDF Processing vs. Persistent S3
-   - Frontend: React + Vite + Vanilla CSS vs. Next.js / TailwindCSS
-   - Polling Mechanism: Periodic Polling vs. WebSockets vs. Server-Sent Events (SSE)
+4. [Tech Stack Deep-Dive & Architectural Trade-offs](#4-tech-stack-deep-dive--architectural-trade-offs)
 5. [The AI/ML Pipeline & Mathematical Formulations](#5-the-aiml-pipeline--mathematical-formulations)
-   - Text Extraction & Normalization
-   - Skill Taxonomy & Skill Expansion Mapping
-   - Embedding Generation (384-dimensional dense vectors)
-   - Cosine Similarity: Mathematical Formula & Geometric Meaning
-   - Multi-Component Granular Scoring (Skills 60%, Projects 20%, Experience 20%)
-   - Additive Blending (Weighted Component vs. Global Cosine Context)
-   - Hiring Probability Sigmoid Calibration (Domain, Seniority, Keyword Boost, Exp Penalty)
-   - Two-Stage Hybrid Skill Matcher (Exact Overlap + Semantic Cosine Fallback)
 6. [Database Architecture & Schema Design](#6-database-architecture--schema-design)
-   - Relational Schema Breakdown
-   - JSONB vs. Relational Columns
-   - Row-Level Security (RLS) & Supabase Auth Integration
 7. [Production Engineering, Reliability & Fault Tolerance](#7-production-engineering-reliability--fault-tolerance)
-   - Dual-Provider LLM Resilience (Circuit Breaker & Fallback)
-   - Celery Task Guarantees (Timeouts, Soft Limits, Retries, Solo Pool)
-   - Ephemeral PDF Lifecycle (Privacy, Zero-Disk Footprint, GDPR Compliance)
-   - Rate-Limit Handling with Exponential Backoff
 8. [MLOps & Reproducibility](#8-mlops--reproducibility)
-   - DVC (Data Version Control) Multi-Stage Pipelines
-   - Parameter Centralization (`params.yaml`)
-   - MLflow Experiment Tracking
-   - Containerization & Kubernetes (EKS, HPA, ConfigMaps, Secrets)
-9. [Comprehensive Interview Q&A (50+ Recruiter & Engineering Questions)](#9-comprehensive-interview-qa-50-recruiter--engineering-questions)
-   - Part A: Recruiter & Behavioral Questions (Culture, Team, Role)
-   - Part B: Core Architecture & System Design Questions
-   - Part C: Machine Learning, NLP & Mathematical Questions
-   - Part D: Backend & Concurrency Questions (FastAPI, Celery, Redis)
-   - Part E: Frontend & Client-Server Integration Questions
-   - Part F: Edge Cases, Security, Failures & Difficult Bugs
-   - Part G: Scale, Optimization & Future Roadmap Questions
+9. [Comprehensive Interview Q&A (50 Recruiter & Engineering Questions)](#9-comprehensive-interview-qa-50-recruiter--engineering-questions)
+   - [Part A: Recruiter & Behavioral Questions (Q1-Q7)](#part-a-recruiter--behavioral-questions)
+   - [Part B: Core Architecture & System Design Questions (Q8-Q15)](#part-b-core-architecture--system-design-questions)
+   - [Part C: Machine Learning, NLP & Mathematical Questions (Q16-Q25)](#part-c-machine-learning-nlp--mathematical-questions)
+   - [Part D: Backend, Concurrency & Security Questions (Q26-Q33)](#part-d-backend-concurrency--security-questions)
+   - [Part E: Frontend & Client-Server Integration Questions (Q34-Q40)](#part-e-frontend--client-server-integration-questions)
+   - [Part F: Edge Cases, Security, Failures & Difficult Bugs (Q41-Q45)](#part-f-edge-cases-security-failures--difficult-bugs)
+   - [Part G: Scale, Optimization & Future Roadmap Questions (Q46-Q50)](#part-g-scale-optimization--future-roadmap-questions)
+10. [Quick Reference Formulas & Numbers Cheat Sheet](#10-quick-reference-formulas--numbers-cheat-sheet)
 
 ---
 
 ## 1. Executive Summary & Elevator Pitches
 
 ### 30-Second Elevator Pitch
-> *"SkillGap AI is an end-to-end semantic career intelligence platform that solves the black-box problem of modern hiring. Instead of relying on fragile keyword matching or hallucination-prone generic prompts, SkillGap AI combines a local Sentence-Transformers embedding pipeline (`all-MiniLM-L6-v2`) with custom mathematical calibration (Sigmoid hiring probability curves, multi-component weighting) and high-throughput LLM reasoning via Groq and Together AI. Job seekers get a mathematically grounded match score, exact and semantic skill gap breakdowns, rewritten resume bullets with quantified impact, and a dynamic 30-60-90 day learning roadmap in under 5 seconds."*
+> "SkillGap AI is an end-to-end semantic career intelligence platform that solves the black-box problem of modern hiring. Instead of relying on fragile keyword matching or hallucination-prone generic prompts, SkillGap AI combines a local Sentence-Transformers embedding pipeline (`all-MiniLM-L6-v2`) with custom mathematical calibration (Sigmoid hiring probability curves, multi-component weighting) and high-throughput LLM reasoning via Groq and Together AI. Job seekers get a mathematically grounded match score, exact and semantic skill gap breakdowns, rewritten resume bullets with quantified impact, and a dynamic 30-60-90 day learning roadmap in under 5 seconds."
 
 ### 2-Minute Deep-Dive Pitch
-> *"When candidates apply to technical roles, they face two extremes: legacy ATS scanners that blindly penalize candidates for slight wording differences (e.g., 'ML' vs 'Machine Learning'), or generic ChatGPT prompts that give vague, uncalibrated scores like '8/10' without any mathematical foundation.*
+> "When candidates apply to technical roles, they face two extremes: legacy ATS scanners that blindly penalize candidates for slight wording differences (e.g., 'ML' vs 'Machine Learning'), or generic ChatGPT prompts that give vague, uncalibrated scores like '8/10' without any mathematical foundation.
 >
-> *I designed and implemented SkillGap AI to solve both problems through a robust, full-stack microservice architecture:*
-> 1. *On the **Frontend**, I built a responsive React SPA featuring real-time upload progress, an interactive score gauge, granular radar-style metrics, and dynamic career roadmaps.*
-> 2. *The **Backend** is built on FastAPI, serving an asynchronous request/response model. Resume PDFs are processed ephemerally using `pdfplumber`—extracting text and deleting temp files immediately to ensure zero-disk footprint and candidate privacy.*
-> 3. *Matching is offloaded to a **Celery** background worker backed by **Redis**. The worker normalizes text, passes skills through an expansion taxonomy, and runs our dual-stage matcher: exact match first, followed by semantic cosine similarity using `all-MiniLM-L6-v2` 384-dimensional dense vectors.*
-> 4. *Our scoring engine calculates a **Final Weighted Score** (60% skills, 20% projects, 20% experience) and runs it through a custom **calibrated Sigmoid function** that factors in candidate seniority deltas, domain adjustments, and experience year shortfalls.*
-> 5. *To deliver bullet rewrites and actionable roadmaps without incurring multi-call latency, I designed a **single comprehensive prompt** executed via Groq (Llama 3.3-70B) with automatic failover to Together AI (Mistral-Small-24B). This brought response time from 15 seconds down to ~3 seconds while slashing LLM costs by 85%.*
-> 6. *All historical results, user profiles, and job applications are securely persisted in **Supabase PostgreSQL**."*
+> I designed and implemented SkillGap AI to solve both problems through a robust, full-stack microservice architecture:
+> 1. On the **Frontend**, I built a responsive React SPA featuring real-time upload progress, an interactive score gauge, granular radar-style metrics, and dynamic career roadmaps.
+> 2. The **Backend** is built on FastAPI, serving an asynchronous request/response model. Resume PDFs are processed ephemerally using `pdfplumber`—extracting text and deleting temp files immediately to ensure zero-disk footprint and candidate privacy.
+> 3. Matching is offloaded to a **Celery** background worker backed by **Redis**. The worker normalizes text, passes skills through an expansion taxonomy, and runs our dual-stage matcher: exact match first, followed by semantic cosine similarity using `all-MiniLM-L6-v2` 384-dimensional dense vectors.
+> 4. Our scoring engine calculates a **Final Weighted Score** (60% skills, 20% projects, 20% experience) and runs it through a custom **calibrated Sigmoid function** that factors in candidate seniority deltas, domain adjustments, and experience year shortfalls.
+> 5. To deliver bullet rewrites and actionable roadmaps without incurring multi-call latency, I designed a **single comprehensive prompt** executed via Groq (Llama 3.3-70B) with automatic failover to Together AI (Mistral-Small-24B). This brought response time from 15 seconds down to ~3 seconds while slashing LLM costs by 85%.
+> 6. All historical results, user profiles, and job applications are securely persisted in **Supabase PostgreSQL**."
 
 ### Resume Bullet Points (Copy & Paste Ready)
 * **Architected and built SkillGap AI**, an end-to-end career intelligence web application utilizing **FastAPI**, **React**, **Celery**, **Redis**, and **Supabase (PostgreSQL)**.
@@ -95,13 +59,13 @@
 
 ### Why Naive "Ask ChatGPT" Approaches Fail
 1. **Non-Deterministic Scoring:** Asking an LLM *"Rate this resume from 1 to 100"* yields varying scores (e.g., 65 on run 1, 88 on run 2) for the exact same input because autoregressive language models are probabilistic token predictors, not calibrated mathematical evaluators.
-2. **Extreme Hallucination in Bullet Points:** Generic prompts often fabricate metrics (e.g., *"Increased revenue by $4.2M"*) when rewriting bullets, destroying candidate credibility during background checks.
-3. **Prohibitive Latency & Cost:** Running 5 separate prompts (skills, score, roadmap, rewrites, alternate titles) consumes 15–25 seconds and costs 5x more tokens, making the application unusable at interactive scale.
+2. **Extreme Hallucination in Bullet Points:** Generic prompts often fabricate metrics (e.g., *"Increased revenue by \$4.2M"*) when rewriting bullets, destroying candidate credibility during background checks.
+3. **Prohibitive Latency & Cost:** Running 5 separate prompts (skills, score, roadmap, rewrites, alternate titles) consumes 15 to 25 seconds and costs 5x more tokens, making the application unusable at interactive scale.
 
 ### The SkillGap AI Value Proposition
 SkillGap AI decouples **objective mathematical evaluation** from **subjective generative reasoning**:
 * **Deterministic Math Layer (Local Embeddings + Scorer):** Generates dense vector representations, measures cosine similarity, and evaluates hiring probability mathematically. Every run yields reproducible, objective metrics.
-* **Constrained Generative Layer (Groq/Together AI):** The LLM receives pre-computed match scores, explicit missing skill lists, and strict anti-hallucination constraints ("*preserve all factual content; never invent numbers*"). It is used only for what LLMs do best: synthesis, reframing, and structured JSON generation.
+* **Constrained Generative Layer (Groq/Together AI):** The LLM receives pre-computed match scores, explicit missing skill lists, and strict anti-hallucination constraints (*"preserve all factual content; never invent numbers"*). It is used only for what LLMs do best: synthesis, reframing, and structured JSON generation.
 
 ---
 
@@ -174,7 +138,7 @@ flowchart TB
 
 ### End-to-End Request Lifecycle (10 Distinct Steps)
 
-```
+```text
 [Candidate] Drops PDF + Pastes JD
      │
      ▼
@@ -254,8 +218,6 @@ flowchart TB
 
 ## 4. Tech Stack Deep-Dive & Architectural Trade-offs
 
-When interviewers ask: *"Why did you choose technology X over technology Y?"*, use the structured comparisons below:
-
 ### 1. Backend: FastAPI vs. Flask vs. Django
 | Criterion | FastAPI (Chosen) | Flask | Django |
 | :--- | :--- | :--- | :--- |
@@ -283,7 +245,7 @@ When interviewers ask: *"Why did you choose technology X over technology Y?"*, u
 ### 3. Embeddings: Sentence-Transformers (`all-MiniLM-L6-v2`) vs. OpenAI (`text-embedding-3-small`) vs. TF-IDF
 | Criterion | `all-MiniLM-L6-v2` (Chosen) | OpenAI `text-embedding-3-small` | TF-IDF / BM25 |
 | :--- | :--- | :--- | :--- |
-| **Hosting & Cost** | Self-hosted locally; **$0 API cost** per million inferences | $0.02 / 1M tokens; ongoing external API cost | Self-hosted locally; $0 cost |
+| **Hosting & Cost** | Self-hosted locally; **\$0 API cost** per million inferences | \$0.02 / 1M tokens; ongoing external API cost | Self-hosted locally; \$0 cost |
 | **Latency** | **15–30ms** per document on CPU; 3ms on GPU | 150–400ms network round-trip latency | < 5ms (pure sparse matrix math) |
 | **Semantic Understanding**| Trained specifically for sentence pair semantic similarity (cosine) | Excellent semantic understanding | **Zero semantic understanding** (pure lexical matching) |
 | **Privacy / Compliance** | Candidate resumes **never leave the local infrastructure** | Sends complete candidate resumes to external third-party server | Local |
@@ -298,7 +260,7 @@ When interviewers ask: *"Why did you choose technology X over technology Y?"*, u
 | :--- | :--- | :--- |
 | **Generation Speed** | **300+ tokens/second** via Groq LPUs (Tensor Streaming Processors) | 40–70 tokens/second |
 | **Total Response Time**| **~2.5 to 3.5 seconds** for 1,200 tokens | 9.0 to 14.0 seconds |
-| **Cost Efficiency** | ~$0.59 / million tokens (Llama 3.3-70B) | $5.00 / million tokens (8.5x more expensive) |
+| **Cost Efficiency** | ~\$0.59 / million tokens (Llama 3.3-70B) | \$5.00 / million tokens (8.5x more expensive) |
 | **High Availability** | Automatic failover to Together AI (Mistral-Small-24B) if Groq 429s/timeouts | Single point of failure if OpenAI API degrades |
 
 > **Interview Pitch:** *"User experience in resume matching demands near-instantaneous feedback. Traditional OpenAI calls took 10+ seconds. By deploying on Groq's custom LPU hardware with Llama 3.3-70B, generation time dropped to under 3 seconds. To guard against rate limits (HTTP 429), I implemented a circuit breaker with Together AI's Mistral-Small as an automatic fallback."*
@@ -334,14 +296,14 @@ When interviewers ask: *"Why did you choose technology X over technology Y?"*, u
   * Frontend submits match, receives `task_id`, and queries `GET /api/result/{task_id}` every 2 seconds.
 * **Why not WebSockets?**
   * WebSockets require persistent, stateful TCP connections. This complicates autoscaling behind load balancers (sticky sessions required) and consumes server file descriptors.
-  * Since our pipeline completes in 3–5 seconds, 2–3 lightweight HTTP GET requests over HTTP/2 are significantly simpler, fully stateless, and seamlessly scale across distributed Kubernetes pods.
+  * Since our pipeline completes in 3 to 5 seconds, 2 or 3 lightweight HTTP GET requests over HTTP/2 are significantly simpler, fully stateless, and seamlessly scale across distributed Kubernetes pods.
 
 ---
 
 ## 5. The AI/ML Pipeline & Mathematical Formulations
 
 ### 1. Vector Cosine Similarity
-Cosine similarity evaluates the angular alignment between two $n$-dimensional vectors, completely invariant to document length:
+Cosine similarity evaluates the angular alignment between two n-dimensional vectors, completely invariant to document length:
 
 $$\text{Cosine Similarity}(A, B) = \frac{A \cdot B}{\|A\| \|B\|} = \frac{\sum_{i=1}^{n} A_i B_i}{\sqrt{\sum_{i=1}^{n} A_i^2} \sqrt{\sum_{i=1}^{n} B_i^2}}$$
 
@@ -380,11 +342,11 @@ $$\text{Final Match Score} = (0.70 \times \text{Score}_{\text{weighted}}) + (0.3
 ---
 
 ### 3. Non-Linear Calibrated Hiring Probability Formula
-Raw cosine similarities cluster in the range of $[0.50, 0.85]$. Displaying a raw score of 0.68 confuses candidates (it sounds like an 'F' or 68%). We calibrate this score into an industry-calibrated hiring probability percentage using a customized Sigmoid transformation:
+Raw cosine similarities cluster in the range of [0.50, 0.85]. Displaying a raw score of 0.68 confuses candidates (it sounds like an 'F' or 68%). We calibrate this score into an industry-calibrated hiring probability percentage using a customized Sigmoid transformation:
 
 #### Base Sigmoid Calibration:
 $$\text{Base Probability} = \frac{1}{1 + e^{-(10 \times \text{Score}_{\text{final}} - 2.5)}} \times 100$$
-* *Inflection point:* Shifted by $-2.5$ so an average match (~0.60) yields a competitive probability (~65–70%).
+* *Inflection point:* Shifted by -2.5 so an average match (~0.60) yields a competitive probability (~65-70%).
 * *Zero-Gap Guarantee:* If missing skills count is 0, $\text{Base Probability} = \max(\text{Base Probability}, 85.0)$.
 
 #### Domain & Seniority Modifiers:
@@ -408,7 +370,7 @@ $$\text{Hiring Probability} = \text{clamp}\Big(\text{Adjusted Prob} + \text{Bonu
 * **Stage 1: Exact String Matching:**
   * Checks direct inclusion after string normalization (stripping brackets, normalizing hyphens, lowercasing).
 * **Stage 2: Semantic Proximity Fallback:**
-  * For any unmatched JD skill $s_{\text{jd}}$, computes cosine similarity against all resume skills $\{s_{\text{res}}\}$:
+  * For any unmatched JD skill $s_{\text{jd}}$, computes cosine similarity against all resume skills:
   $$\max_{s_{\text{res}}} \text{cosine}(E(s_{\text{jd}}), E(s_{\text{res}})) > 0.60$$
   * If greater than threshold $\tau = 0.60$, the skill is categorized as **Matched**.
   * *Example:* JD specifies `"PostgreSQL"`, Resume contains `"Postgres database"`. Exact match fails; semantic cosine is $0.89 \ge 0.60 \implies$ Matched!
@@ -419,55 +381,55 @@ $$\text{Hiring Probability} = \text{clamp}\Big(\text{Adjusted Prob} + \text{Bonu
 
 Persisted via **Supabase PostgreSQL**. The schema enforces relational integrity while utilizing `JSONB` for unstructured ML outputs:
 
-```
-┌─────────────────────────────────┐
-│          user_profiles          │
-├─────────────────────────────────┤
-│ id: UUID (PK, FK auth.users)    │
-│ email: TEXT UNIQUE              │
-│ full_name: TEXT                 │
-│ profile_picture_url: TEXT       │
-│ bio: TEXT                       │
-│ created_at: TIMESTAMP           │
-└───────────────┬─────────────────┘
-                │ 1
-                │
-                │ N
-┌───────────────▼─────────────────┐       1 ┌──────────────────────────────────┐
-│             resumes             │─────────│          match_results           │
-├─────────────────────────────────┤         ├──────────────────────────────────┤
-│ id: UUID (PK)                   │       N │ id: UUID (PK)                    │
-│ user_id: UUID (FK)              │         │ user_id: UUID (FK)               │
-│ filename: TEXT                  │         │ resume_id: UUID (FK)             │
-│ s3_key: TEXT (ephemeral marker) │         │ jd_role: TEXT                    │
-│ extraction_confidence: FLOAT    │         │ match_score: FLOAT               │
-│ extracted_text: TEXT            │         │ hiring_probability: INT          │
-│ raw_sections: JSONB             │         │ matched_skills: TEXT[]           │
-│ created_at: TIMESTAMP           │         │ missing_skills: TEXT[]           │
-└─────────────────────────────────┘         │ critical_missing: TEXT[]         │
-                                            │ granular_scores: JSONB           │
-                                            │ score_factors: JSONB             │
-                                            │ rewritten_bullets: JSONB         │
-                                            │ roadmap: JSONB / TEXT            │
-                                            │ recommended_roles: JSONB         │
-                                            │ created_at: TIMESTAMP            │
-                                            └────────────────┬─────────────────┘
-                                                             │ 1
-                                                             │
-                                                             │ 0..1
-                                            ┌────────────────▼─────────────────┐
-                                            │           applications           │
-                                            ├──────────────────────────────────┤
-                                            │ id: UUID (PK)                    │
-                                            │ user_id: UUID (FK)               │
-                                            │ match_result_id: UUID (FK, Null) │
-                                            │ company: TEXT                    │
-                                            │ role: TEXT                       │
-                                            │ applied_date: DATE               │
-                                            │ status: TEXT (Applied/Interview) │
-                                            │ match_score: FLOAT               │
-                                            │ notes: TEXT                      │
-                                            └──────────────────────────────────┘
+```text
++---------------------------------+
+|          user_profiles          |
++---------------------------------+
+| id: UUID (PK, FK auth.users)    |
+| email: TEXT UNIQUE              |
+| full_name: TEXT                 |
+| profile_picture_url: TEXT       |
+| bio: TEXT                       |
+| created_at: TIMESTAMP           |
++---------------+-----------------+
+                | 1
+                |
+                | N
++---------------v-----------------+       1 +----------------------------------+
+|             resumes             |---------|          match_results           |
++---------------------------------+         +----------------------------------+
+| id: UUID (PK)                   |       N | id: UUID (PK)                    |
+| user_id: UUID (FK)              |         | user_id: UUID (FK)               |
+| filename: TEXT                  |         | resume_id: UUID (FK)             |
+| s3_key: TEXT (ephemeral marker) |         | jd_role: TEXT                    |
+| extraction_confidence: FLOAT    |         | match_score: FLOAT               |
+| extracted_text: TEXT            |         | hiring_probability: INT          |
+| raw_sections: JSONB             |         | matched_skills: TEXT[]           |
+| created_at: TIMESTAMP           |         | missing_skills: TEXT[]           |
++---------------------------------+         | critical_missing: TEXT[]         |
+                                            | granular_scores: JSONB           |
+                                            | score_factors: JSONB             |
+                                            | rewritten_bullets: JSONB         |
+                                            | roadmap: JSONB / TEXT            |
+                                            | recommended_roles: JSONB         |
+                                            | created_at: TIMESTAMP            |
+                                            +----------------+-----------------+
+                                                             | 1
+                                                             |
+                                                             | 0..1
+                                            +----------------v-----------------+
+                                            |           applications           |
+                                            +----------------------------------+
+                                            | id: UUID (PK)                    |
+                                            | user_id: UUID (FK)               |
+                                            | match_result_id: UUID (FK, Null) |
+                                            | company: TEXT                    |
+                                            | role: TEXT                       |
+                                            | applied_date: DATE               |
+                                            | status: TEXT (Applied/Interview) |
+                                            | match_score: FLOAT               |
+                                            | notes: TEXT                      |
+                                            +----------------------------------+
 ```
 
 ### Why JSONB for ML Results?
@@ -481,7 +443,7 @@ Fields like `granular_scores`, `score_factors`, `rewritten_bullets`, and `roadma
 External LLM APIs are prone to rate limiting (HTTP 429), timeouts, and transient outages. SkillGap AI implements a provider fallback pattern:
 
 ```python
-# Pseudo-code architecture from fastapi_app/services/llm_service.py
+# Architecture from fastapi_app/services/llm_service.py
 def analyze_resume_comprehensive(self, prompt, ...):
     try:
         # 1. Attempt Primary: Groq (Llama 3.3-70B) with 6s timeout
@@ -502,7 +464,7 @@ def analyze_resume_comprehensive(self, prompt, ...):
   * `task_soft_time_limit = 240` (4 minutes): Throws `SoftTimeLimitExceeded` inside Python so the task can clean up.
   * `task_time_limit = 300` (5 minutes): Hard SIGKILL to terminate runaway tasks.
 * **Idempotency & Retry Policies:** 
-  * Auto-retries up to 3 times on unexpected exceptions with exponential backoff: $1s, 2s, 4s$.
+  * Auto-retries up to 3 times on unexpected exceptions with exponential backoff: 1s, 2s, 4s.
 
 ---
 
@@ -525,7 +487,7 @@ The ML pipeline is formalized in `ai/dvc.yaml` across 4 reproducible stages:
 
 ---
 
-## 9. Comprehensive Interview Q&A (50+ Recruiter & Engineering Questions)
+## 9. Comprehensive Interview Q&A (50 Recruiter & Engineering Questions)
 
 ### Part A: Recruiter & Behavioral Questions
 
@@ -544,17 +506,37 @@ The ML pipeline is formalized in `ai/dvc.yaml` across 4 reproducible stages:
 > - Building the React frontend interface, from PDF dropzone to interactive charts and Supabase authentication.
 > - Containerizing the application using Docker and writing Kubernetes deployment manifests."*
 
-#### Q3: "What was the most challenging technical decision you had to make?"
+#### Q3: "What inspired you to build this specific project?"
+**Answer:**
+> *"I noticed that both fresh graduates and experienced developers spent dozens of hours submitting hundreds of applications with low response rates. Traditional ATS checkers gave conflicting advice, and generic AI prompts like 'review my resume' produced generic, unquantified summaries. I wanted to build a rigorous, production-grade tool that gave candidates real mathematical insights, quantified probabilities, and concrete steps to bridge skill gaps."*
+
+#### Q4: "What was the most challenging technical decision you had to make?"
 **Answer:**
 > *"The hardest decision was how to balance LLM generation quality, cost, and latency. Initially, I had 5 separate LangChain chains running sequentially—one for skills, one for bullet rewrites, one for the roadmap, etc. The results were good, but it took 15 to 18 seconds to finish, and if OpenAI rate-limited any single call, the whole analysis crashed.
 > 
 > I re-engineered the architecture: I separated the math from the LLM. All scoring and skill matching is calculated locally in 20 milliseconds using Sentence-Transformers and NumPy. Then, I combined all generative tasks into a single comprehensive prompt executed on Groq's LPU hardware with Together AI as a fallback. This reduced latency from 16 seconds down to 3 seconds, cut API costs by 85%, and eliminated single points of failure."*
 
+#### Q5: "How did you prioritize features between MVP and future enhancements?"
+**Answer:**
+> *"I used a P0/P1/P2 prioritization matrix based on candidate value. Core matching, hiring probability, missing skills, and bullet rewrites were P0 because they directly impact interview callback rates. Application tracking and persistent history were P1. Advanced features like visual diff viewers and automated PDF generators were categorized as P2 for subsequent releases."*
+
+#### Q6: "If you had to start this project over from scratch today, what would you do differently?"
+**Answer:**
+> *"I would design the system with Server-Sent Events (SSE) from day one instead of short polling. While short polling works reliably and keeps the architecture stateless, SSE provides a smoother user experience with progressive streaming updates as each pipeline stage completes."*
+
+#### Q7: "How did you ensure the project remained maintainable as the codebase grew?"
+**Answer:**
+> *"I enforced strict separation of concerns across multiple layers:
+> - The ML evaluation code lives in dedicated modules (`ai/src`) versioned with DVC.
+> - The API routing layer (`fastapi_app/routers`) only handles HTTP serialization and input validation.
+> - Heavy compute workloads are isolated inside Celery workers.
+> - The React frontend maintains a deterministic transformation layer (`transform.js`) to separate raw backend JSON payloads from UI formatting."*
+
 ---
 
 ### Part B: Core Architecture & System Design Questions
 
-#### Q4: "Why did you build an asynchronous task architecture with Celery instead of processing the match synchronously inside FastAPI?"
+#### Q8: "Why did you build an asynchronous task architecture with Celery instead of processing the match synchronously inside FastAPI?"
 **Answer:**
 > *"In Python, synchronous requests block the worker thread. Embedding a full resume and job description using PyTorch models, calculating matrix multiplications, and making external LLM calls takes between 2 and 4 seconds. 
 >
@@ -562,39 +544,65 @@ The ML pipeline is formalized in `ai/dvc.yaml` across 4 reproducible stages:
 >
 > By utilizing Celery with Redis, the FastAPI API responds in under 50 milliseconds with an HTTP 202 Accepted and a `task_id`. The client polls for progress. The web API remains completely responsive, while the compute-heavy workloads run across horizontally scalable worker pools."*
 
-#### Q5: "How does the frontend know when the Celery task has finished?"
+#### Q9: "How does the frontend know when the Celery task has finished?"
 **Answer:**
 > *"We use client-side interval polling. When the user submits a match, the frontend receives a `task_id`. It triggers an asynchronous polling function using `setInterval` or recursive `setTimeout` every 2 seconds against `GET /api/result/{task_id}`.
 >
 > On the backend, FastAPI queries Celery's `AsyncResult(task_id)`. If the task is still working, it returns `{ status: 'pending' }`. When the worker finishes and writes the compiled dictionary to Redis backend DB 1, `async_result.successful()` returns true, and FastAPI returns `{ status: 'completed', result: data }`. The frontend stops polling, updates its state, and renders the analysis dashboard."*
 
-#### Q6: "Why didn't you use WebSockets instead of polling?"
+#### Q10: "Why didn't you use WebSockets instead of polling?"
 **Answer:**
 > *"I evaluated WebSockets, Server-Sent Events (SSE), and Short Polling. 
 > - WebSockets maintain stateful TCP socket connections. This introduces architectural complexity when scaling horizontally across Kubernetes pods because you need sticky sessions or a Redis Pub/Sub backplane to route socket messages to the right container.
 > - Because our entire pipeline finishes in only 3 to 4 seconds, the client only needs to make 1 or 2 polling requests before receiving the completed payload. Polling over stateless HTTP/2 is vastly simpler, completely stateless, highly reliable across mobile/spotty networks, and requires zero socket connection management."*
 
+#### Q11: "Explain how Redis is utilized in this architecture."
+**Answer:**
+> *"Redis 7.0 serves two distinct roles separated across logical databases:
+> 1. **Database 0 (`CELERY_BROKER_URL`):** Acts as the high-throughput AMQP message broker queue storing pending match tasks dispatched by FastAPI.
+> 2. **Database 1 (`CELERY_RESULT_BACKEND`):** Stores serialized task output results keyed by `task_id`. Celery configures a result TTL (86,400s / 24 hours), so old match outputs are automatically evicted from memory."*
+
+#### Q12: "How would you handle a spike of 10,000 resumes submitted within 5 minutes?"
+**Answer:**
+> *"In a sudden traffic surge:
+> 1. **FastAPI Ingestion:** FastAPI handles the spike easily because it only writes temporary files, extracts text, enqueues the task ID into Redis, and returns HTTP 202.
+> 2. **Redis Message Queue:** Redis buffers the 10,000 tasks in memory with minimal footprint (~10MB of task pointers).
+> 3. **Horizontal Pod Autoscaling (HPA):** Using KEDA (Kubernetes Event-driven Autoscaling), our worker deployment monitors Redis queue depth (`redis-cli llen celery`) and automatically scales worker pods from 2 up to 30 instances.
+> 4. **Rate Limiting:** FastAPI's rate limiter (`slowapi`) enforces per-IP throttling (e.g., max 5 uploads per minute per user) to prevent DDoS attacks."*
+
+#### Q13: "What happens if a worker pod crashes mid-execution of a match task?"
+**Answer:**
+> *"Celery handles worker crashes through task acknowledgment policies. By configuring `acks_late=True` or automated retry handlers (`autoretry_for=(Exception,)`), if a worker container terminates unexpectedly before sending a completion signal, Redis re-enqueues the task for another healthy worker to pick up and process."*
+
+#### Q14: "Why use Pydantic v2 in the FastAPI backend?"
+**Answer:**
+> *"Pydantic v2 core is rewritten in Rust, providing up to 20x faster data validation than pure Python. It guarantees strict type checking, automatically parses JSON request bodies into strongly-typed objects (`MatchRequest`, `MatchResponse`), and enforces data contracts before any business logic is executed."*
+
+#### Q15: "How is CORS configured and why is it important?"
+**Answer:**
+> *"In `fastapi_app/main.py`, we implement `CORSMiddleware` with explicit allowed origins (`http://localhost:5173`, `http://localhost:3000`). This prevents Cross-Site Scripting (XSS) and unauthorized external websites from making forged cross-origin requests to our private backend endpoints using a user's stored session."*
+
 ---
 
-### Part C: Machine Learning & NLP Questions
+### Part C: Machine Learning, NLP & Mathematical Questions
 
-#### Q7: "Why use Sentence-Transformers instead of standard BERT or Word2Vec?"
+#### Q16: "Why use Sentence-Transformers instead of standard BERT or Word2Vec?"
 **Answer:**
-> *"Standard BERT was trained with Masked Language Modeling and Next Sentence Prediction. It does not produce semantically meaningful sentence embeddings natively. Finding semantic similarity with standard BERT requires passing both sentences simultaneously into cross-encoders, which scales at $O(n^2)$ and is far too slow for real-time document comparison.
+> *"Standard BERT was trained with Masked Language Modeling and Next Sentence Prediction. It does not produce semantically meaningful sentence embeddings natively. Finding semantic similarity with standard BERT requires passing both sentences simultaneously into cross-encoders, which scales at O(n^2) and is far too slow for real-time document comparison.
 >
 > Word2Vec produces static word-level vectors and cannot understand context (e.g., 'Apple company' vs 'apple fruit'), and averaging word vectors loses all syntax and word order.
 >
-> Sentence-Transformers (specifically `all-MiniLM-L6-v2`) uses a siamese network fine-tuned specifically to map variable-length texts into a 384-dimensional dense vector space such that semantically similar sentences have high cosine similarity. It encodes documents independently in $O(n)$ time."*
+> Sentence-Transformers (specifically `all-MiniLM-L6-v2`) uses a siamese network fine-tuned specifically to map variable-length texts into a 384-dimensional dense vector space such that semantically similar sentences have high cosine similarity. It encodes documents independently in O(n) time."*
 
-#### Q8: "Explain the two-stage hybrid skill matching algorithm."
+#### Q17: "Explain the two-stage hybrid skill matching algorithm."
 **Answer:**
 > *"Real-world skills have both lexical matches and conceptual synonyms.
-> - **Stage 1 (Exact Match):** We take normalized strings and check set intersection. If the JD requires `'Python'` and the resume has `'Python'`, it's matched instantly in $O(1)$ time.
-> - **Stage 2 (Semantic Fallback):** For any JD skill not matched in Stage 1, we pass its embedding and the embeddings of all candidate skills to a cosine distance function. If $\text{cosine}(E(s_{\text{jd}}), E(s_{\text{resume}})) \ge 0.60$, we accept it as a match.
+> - **Stage 1 (Exact Match):** We take normalized strings and check set intersection. If the JD requires `'Python'` and the resume has `'Python'`, it's matched instantly in O(1) time.
+> - **Stage 2 (Semantic Fallback):** For any JD skill not matched in Stage 1, we pass its embedding and the embeddings of all candidate skills to a cosine distance function. If cosine similarity is >= 0.60, we accept it as a match.
 > 
 > For instance, `'Amazon Web Services'` and `'AWS'`, or `'PostgreSQL'` and `'Postgres'`. This eliminates false negatives that break traditional ATS software."*
 
-#### Q9: "Why is the similarity threshold set to 0.60?"
+#### Q18: "Why is the similarity threshold set to 0.60?"
 **Answer:**
 > *"Through empirical evaluation during feature engineering (tracked in our DVC metrics), we found that in 384-dimensional space with `all-MiniLM-L6-v2`:
 > - Pairs above 0.75 are near-identical rephrasings (e.g., `'K8s'` vs `'Kubernetes'`).
@@ -603,22 +611,48 @@ The ML pipeline is formalized in `ai/dvc.yaml` across 4 reproducible stages:
 > 
 > Setting the threshold at 0.60 allows candidate skills to bridge reasonable gaps without incorrectly matching unrelated technologies."*
 
-#### Q10: "Walk me through your Sigmoid Hiring Probability formula."
+#### Q19: "Walk me through your Sigmoid Hiring Probability formula."
 **Answer:**
 > *"Raw cosine scores are bounded between -1 and 1, and for resume embeddings, they usually hover between 0.50 and 0.85. If you show a candidate a '0.65' match score, they assume they failed.
 >
 > We pass the final score into a calibrated Sigmoid function:
-> $$\text{base\_prob} = \frac{100}{1 + e^{-(10 \cdot S - 2.5)}}$$
+> Base Prob = 100 / (1 + e^-(10 * S - 2.5))
 > 
-> The multiplier of 10 creates a steep, discriminative curve, while the offset of $-2.5$ shifts the midpoint so that a 0.65 score maps to roughly 70% probability. 
+> The multiplier of 10 creates a steep, discriminative curve, while the offset of -2.5 shifts the midpoint so that a 0.65 score maps to roughly 70% probability. 
 >
 > Then, we apply domain multipliers (tech vs finance), adjust for candidate seniority versus job requirements (+10% or -15%), add a small boost for exact keyword matches (up to +5%), and subtract an experience penalty (0.07 per year of shortfall). Finally, we clamp the output between 1% and 99%."*
+
+#### Q20: "What is the Skill Taxonomy Expansion and why is it necessary?"
+**Answer:**
+> *"Many job descriptions mention umbrella technologies like 'Generative AI' or 'MLOps' without enumerating every sub-technique. Our taxonomy mapping (`ai/skill_expansion_cleaned.json`) maps parent concepts to specialized competencies (e.g., 'Generative AI' expands to 'DPO', 'Tokenization', 'Multi-Head Attention'). This enables candidates with deep practical experience to match high-level JD requirements."*
+
+#### Q21: "How do you extract candidate skills from unstructured resume text?"
+**Answer:**
+> *"We use a two-pronged extraction strategy:
+> 1. **Domain Lexicon Search:** A curated vocabulary of 500+ standard technical keywords (languages, frameworks, cloud platforms, databases, devops tools) is matched against normalized resume n-grams.
+> 2. **Context-Aware JD Cross-Reference:** The system specifically scans the candidate resume for exact mentions of the target job description's extracted required skills."*
+
+#### Q22: "Why do you compute separate embeddings for skills, projects, and experience?"
+**Answer:**
+> *"In a holistic resume vector, a lengthy description of college coursework or irrelevant hobbies dilutes the mathematical representation of technical skills. By segmenting the resume into functional components, we calculate independent semantic vectors for technical skills, projects, and work history, applying tuned weights (60% skills, 20% projects, 20% experience)."*
+
+#### Q23: "What is Additive Context Blending and what bug did it resolve?"
+**Answer:**
+> *"Originally, our algorithm multiplied the granular weighted score by the global cosine score. If a candidate had a 95% skill match but their general text cosine was 0.50 due to extra formatting words, their final score dropped to ~47%. We resolved this by switching to an additive linear combination: Final = (0.70 * Granular) + (0.30 * Global Context). This rewards strong skill alignment while still respecting overall context."*
+
+#### Q24: "What embedding dimension does `all-MiniLM-L6-v2` output and what are its memory implications?"
+**Answer:**
+> *"`all-MiniLM-L6-v2` outputs 384-dimensional dense float32 vectors. Each vector occupies 384 * 4 bytes = 1,536 bytes (~1.5 KB). In contrast, models like OpenAI `text-embedding-3-large` output 3,072 dimensions (12 KB per vector). Compact 384-d vectors allow thousands of embeddings to be stored and compared in memory in milliseconds."*
+
+#### Q25: "How does the embedder singleton prevent memory leaks in worker processes?"
+**Answer:**
+> *"In `fastapi_app/ml/embedder.py`, we implemented `EmbedderSingleton` using the `__new__` pattern. The PyTorch transformer model (~90MB) is loaded exactly once when the worker starts up. Subsequent matching tasks reuse the in-memory model rather than reloading weights from disk on every invocation."*
 
 ---
 
 ### Part D: Backend, Concurrency & Security Questions
 
-#### Q11: "How do you guarantee that a user's resume PDF is not permanently stored or leaked?"
+#### Q26: "How do you guarantee that a user's resume PDF is not permanently stored or leaked?"
 **Answer:**
 > *"Candidate privacy was a core architectural requirement. In `backend/fastapi_app/routers/upload.py`, we implement an ephemeral processing lifecycle:
 > 1. The binary stream from `UploadFile` is written to a unique file generated by Python's `tempfile.NamedTemporaryFile` in an isolated temp directory.
@@ -627,13 +661,13 @@ The ML pipeline is formalized in `ai/dvc.yaml` across 4 reproducible stages:
 > 4. In the `finally` block, `tmp_path.unlink()` is invoked unconditionally, deleting the file whether extraction succeeded or threw an exception.
 > No PDF bytes are ever written to persistent disk or AWS S3 in our production deployment."*
 
-#### Q12: "Why do you configure Celery with `worker_pool='solo'`?"
+#### Q27: "Why do you configure Celery with `worker_pool='solo'`?"
 **Answer:**
 > *"By default, Celery uses the `prefork` pool, which uses UNIX `fork()` to spawn worker processes. On Windows operating systems, Python does not have native `fork()` support, which leads to child processes freezing, duplicate tasks, or unhandled permission errors when initializing PyTorch models.
 > 
 > The `solo` pool executes tasks in-process without spawning sub-processes, ensuring full stability on Windows development environments while maintaining the identical task API."*
 
-#### Q13: "What happens if Groq API goes down or hits a 429 Rate Limit?"
+#### Q28: "What happens if Groq API goes down or hits a 429 Rate Limit?"
 **Answer:**
 > *"Our `LLMService` implements a resilient multi-tier fallback:
 > 1. It calls Groq with a strict 6-second timeout.
@@ -641,11 +675,37 @@ The ML pipeline is formalized in `ai/dvc.yaml` across 4 reproducible stages:
 > 3. If Groq times out or fails (HTTP 500/503), an exception is caught and the service immediately fails over to Together AI running `mistralai/Mistral-Small-24B-Instruct-2501`.
 > 4. If all external LLM APIs fail, the pipeline does NOT crash. The worker catches the failure, populates the deterministic scores, skill matches, and gap reports, and returns empty generative fields with a clear user notice."*
 
+#### Q29: "What is Celery's soft vs hard time limit and why do you configure both?"
+**Answer:**
+> *"We set `task_soft_time_limit=240` (4 minutes) and `task_time_limit=300` (5 minutes). 
+> - The soft limit raises a `SoftTimeLimitExceeded` Python exception inside the task code, allowing the worker to log the failure, clean up temporary data, and return a graceful error payload.
+> - The hard limit is an OS-level signal (SIGKILL) that forces termination if an uncooperative task completely hangs."*
+
+#### Q30: "How do you protect against malicious PDF uploads (e.g. zip bombs or PDF exploits)?"
+**Answer:**
+> *"We apply multiple layers of defense:
+> 1. **Content-Type & Extension Validation:** Only files with `.pdf` extension and MIME type `application/pdf` are accepted.
+> 2. **Size Capping:** Incoming file size is strictly limited to 10MB.
+> 3. **Non-Execution Parsing:** We use `pdfplumber` which reads raw text glyphs without executing embedded JavaScript or active PDF form macros."*
+
+#### Q31: "How does the job description URL scraper work?"
+**Answer:**
+> *"In `fastapi_app/services/jd_parser.py`, `fetch_job_description_from_url()` accepts a public job link, sends an HTTP GET request with realistic user-agent headers, and parses the DOM using `BeautifulSoup`. It strips script, style, and nav tags, isolates main container text, and cleans the description before feeding it into the ML matching pipeline."*
+
+#### Q32: "What is the difference between `/health` and `/ready` endpoints?"
+**Answer:**
+> *"- `/health` (Liveness Probe): Returns HTTP 200 if the FastAPI application process is alive. Kubernetes uses this to know if the pod needs to be restarted.
+> - `/ready` (Readiness Probe): Verifies that dependencies are reachable—checking Redis ping and embedding model availability. Kubernetes will not route incoming user traffic to the pod until `/ready` returns 200."*
+
+#### Q33: "How are environment variables and secrets managed in production?"
+**Answer:**
+> *"In local development, secrets are loaded via `python-dotenv` from a local `.env`. In production Kubernetes, secrets (`GROQ_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) are stored in Kubernetes `Secret` resources and mounted into pods as secure environment variables, never hardcoded in source control."*
+
 ---
 
 ### Part E: Frontend & Client-Server Integration Questions
 
-#### Q14: "How does your frontend handle data transformation without relying on the backend to format strings?"
+#### Q34: "How does your frontend handle data transformation without relying on the backend to format strings?"
 **Answer:**
 > *"We maintain a dedicated client-side transformation layer in `frontend/src/lib/transform.js`. 
 > 
@@ -653,23 +713,47 @@ The ML pipeline is formalized in `ai/dvc.yaml` across 4 reproducible stages:
 > 
 > The frontend transformation layer uses deterministic JavaScript functions (`transformStrengths`, `transformWeaknesses`, `transformRoadmap`) to join strings into grammatically correct English sentences, format URLs for LinkedIn job searches, and structure 30-60-90 day timeline objects. This cleanly separates data persistence from presentation logic."*
 
-#### Q15: "How did you manage user authentication and session security?"
+#### Q35: "How did you manage user authentication and session security?"
 **Answer:**
 > *"We integrated Supabase Auth (GoTrue). The frontend initializes the Supabase client using environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`). 
 > 
 > Authentication state is subscribed via `supabase.auth.onAuthStateChange()`. When a user logs in, Supabase issues JWT access and refresh tokens stored in secure browser storage. These tokens authenticate database calls against Row-Level Security (RLS) policies in PostgreSQL, ensuring users can only read and write their own resume analyses and job applications."*
 
+#### Q36: "Why did you choose React + Vite instead of Next.js for this project?"
+**Answer:**
+> *"Our architecture cleanly separates client presentation from backend processing. The backend is a specialized Python service running PyTorch and Celery. 
+> 
+> Using Next.js would have added an unnecessary Node.js server layer in front of our FastAPI backend. A pure React 18 Single Page Application (SPA) built with Vite compiles to static assets (HTML/CSS/JS) that can be hosted on a global CDN (Cloudflare Pages/Vercel) with zero server maintenance, while communicating directly with FastAPI."*
+
+#### Q37: "How is the radial score gauge rendered in the UI?"
+**Answer:**
+> *"In `frontend/src/components/ScoreGauge.jsx`, the gauge is built using purely declarative SVG circles and stroke-dashoffset math:
+> Stroke Offset = Circumference - (Hiring Probability / 100) * Circumference
+> We animate the offset using CSS transitions, dynamically tinting the stroke from crimson (< 50%) to amber (50-74%) to emerald green (>= 75%)."*
+
+#### Q38: "What state management pattern is used across tabs in the frontend?"
+**Answer:**
+> *"In `frontend/src/App.jsx`, state is unified at the top-level root component. State includes active tab, authenticated user profile, current match results, upload status, and application tracker records. Passing state to child components (`ResultDetail`, `DashboardTabs`, `DropZone`) ensures instantaneous tab switching without triggering redundant network re-fetches."*
+
+#### Q39: "What is `useDeferredValue` used for in `App.jsx`?"
+**Answer:**
+> *"We use React 18's `useDeferredValue` hook for searching and filtering through the match history archive and application tracker table. This prevents input lag on keystrokes by deprioritizing the re-rendering of large lists until user typing pauses."*
+
+#### Q40: "How does the frontend handle responsive mobile layouts?"
+**Answer:**
+> *"Our stylesheet (`frontend/src/index.css`) uses mobile-first CSS Grid and Flexbox with fluid CSS custom properties (`clamp()`). Breakpoints at 768px and 1024px adapt multi-column dashboard layouts into stacked touch-friendly vertical views."*
+
 ---
 
-### Part F: Tricky Edge Cases & Hard Bugs Encountered
+### Part F: Edge Cases, Security, Failures & Difficult Bugs
 
-#### Q16: "What happens if a candidate uploads a scanned image PDF without selectable text?"
+#### Q41: "What happens if a candidate uploads a scanned image PDF without selectable text?"
 **Answer:**
 > *"When `pdfplumber` attempts to extract text from a scanned image, it returns an empty string or very few characters. In our `ResumeParser.get_confidence_score()` method, we calculate a heuristic confidence score based on character count, line count, and average line length. 
 > 
 > If the text contains fewer than 50 characters or confidence is below 0.50, the backend returns an HTTP 422 Unprocessable Entity with a descriptive error: `'Unable to extract text from PDF. Scanned images are not supported; please upload a text-based PDF.'` This prevents wasting embedding computation on garbage input."*
 
-#### Q17: "How do you prevent the LLM from hallucinating metrics in the rewritten resume bullets?"
+#### Q42: "How do you prevent the LLM from hallucinating metrics in the rewritten resume bullets?"
 **Answer:**
 > *"In our prompt engineering (`backend/fastapi_app/services/llm_service.py` and `prompts/rewrite.txt`), we apply strict negative constraints:
 > ```
@@ -677,9 +761,9 @@ The ML pipeline is formalized in `ai/dvc.yaml` across 4 reproducible stages:
 > Do NOT invent numbers, percentages, or company names.
 > Only rephrase using stronger action verbs and naturally integrating the target keywords.
 > ```
-> Furthermore, by passing the candidate's actual bullet text as explicit input variables and using a low sampling temperature ($T = 0.3$), the model acts as a constrained rephraser rather than an open-ended creative generator."*
+> Furthermore, by passing the candidate's actual bullet text as explicit input variables and using a low sampling temperature (T = 0.3), the model acts as a constrained rephraser rather than an open-ended creative generator."*
 
-#### Q18: "What was a subtle bug you solved in this project?"
+#### Q43: "What was a subtle bug you solved in this project?"
 **Answer:**
 > *"Early on, when a candidate had an almost 100% skill match for a role, their overall match score was coming out surprisingly low (~52%). 
 > 
@@ -690,25 +774,48 @@ The ML pipeline is formalized in `ai/dvc.yaml` across 4 reproducible stages:
 > I resolved this by redesigning the scoring function:
 > 1. We calculate granular skill, project, and experience embeddings separately.
 > 2. We combine them with explicit weights (60% skills, 20% projects, 20% experience).
-> 3. We use an **additive blend** ($0.7 \times \text{weighted} + 0.3 \times \text{overall}$) rather than a multiplicative penalty. This immediately fixed the issue and produced realistic, fair scores."*
+> 3. We use an **additive blend** (0.7 * weighted + 0.3 * overall) rather than a multiplicative penalty. This immediately fixed the issue and produced realistic, fair scores."*
+
+#### Q44: "How do you handle rate-limit exhaustion if both Groq and Together AI return HTTP 429?"
+**Answer:**
+> *"If all external LLM providers return rate-limit errors or fail to respond within their respective retry windows, the pipeline does not throw an unhandled 500 error. The worker catches the failure, writes all deterministic mathematical scores, matched skills, and categorized missing skill reports to the output, and sets generative fields (rewritten bullets, roadmap) to empty lists accompanied by a user notice: `'AI generation temporarily degraded due to provider traffic. Match metrics calculated successfully.'`"*
+
+#### Q45: "How does the system prevent SQL injection and NoSQL injection?"
+**Answer:**
+> *"1. We do not write raw concatenated SQL strings. All queries executed against Supabase PostgreSQL utilize the PostgREST parameterized query builder or Supabase client ORM, which automatically parameterizes all user inputs.
+> 2. Pydantic strictly validates all incoming request data types before query construction."*
 
 ---
 
-### Part G: Scale, Optimization & Future Roadmap
+### Part G: Scale, Optimization & Future Roadmap Questions
 
-#### Q19: "How would you scale this platform to support 100,000 daily active users?"
+#### Q46: "How would you scale this platform to support 100,000 daily active users?"
 **Answer:**
 > *"To scale 100x:
-> 1. **Embedding Caching:** Compute SHA-256 hashes of standardized resume skills and JDs and cache their 384-d vectors in Redis with a 24-hour TTL. Duplicate skill encodings would drop to $O(1)$.
+> 1. **Embedding Caching:** Compute SHA-256 hashes of standardized resume skills and JDs and cache their 384-d vectors in Redis with a 24-hour TTL. Duplicate skill encodings would drop to O(1).
 > 2. **GPU Worker Nodes:** Transition Celery embedding workers to GPU-backed instances (e.g., AWS G4dn with NVIDIA T4) utilizing TensorRT or ONNX Runtime, increasing embedding throughput from 50 docs/sec to 1,500+ docs/sec.
 > 3. **Vector Database:** Move the alternate job title lookups to a dedicated vector database like Milvus or Pinecone with HNSW indexing for sub-10ms similarity searches across 500,000+ indexed job titles.
 > 4. **Kubernetes Auto-scaling:** Configure KEDA (Kubernetes Event-driven Autoscaling) to scale Celery worker pods automatically based on Redis queue depth rather than simple CPU metrics."*
 
-#### Q20: "What feature would you build next?"
+#### Q47: "How would you benchmark matching quality against real human recruiters?"
+**Answer:**
+> *"We would curate a benchmark dataset of 500 anonymized resume-JD pairs labeled by senior technical recruiters (ranking match quality from 1 to 5). We would evaluate our system using:
+> - **Spearman's Rank Correlation:** Measuring correlation between SkillGap AI match score rankings and recruiter rankings.
+> - **Recall @ K on Missing Skills:** Ensuring our system identifies at least 85% of the core competencies human recruiters flagged as missing."*
+
+#### Q48: "What feature would you build next?"
 **Answer:**
 > *"I would implement an automated **Resume Diff Viewer & Instant PDF Generator**. 
 > 
 > Right now, the candidate sees rewritten bullet points side-by-side on the dashboard. The next evolution would let the candidate click 'Accept Rewrite', see a real-time visual diff of their resume using `react-diff-viewer`, and export an ATS-optimized, beautifully typeset PDF directly using headless Chromium or LaTeX rendering."*
+
+#### Q49: "Could this platform be adapted for enterprise recruiters instead of job seekers?"
+**Answer:**
+> *"Yes. The architecture can run in reverse: a recruiter pastes one Job Description, and the system matches it against an enterprise database of 10,000 candidate resumes in batch mode. By pre-computing and indexing resume vectors in a vector database like Pinecone or pgvector, the system can rank top candidates in sub-second time."*
+
+#### Q50: "What was the most important engineering lesson you learned from building SkillGap AI?"
+**Answer:**
+> *"The biggest lesson was that **LLMs should be used for synthesis and generation, not for deterministic math**. Relying on LLMs for calculations leads to inconsistent, uncalibrated, and expensive systems. Building a hybrid architecture—where local embedding models and NumPy handle the math, while the LLM handles constrained natural language reframing—produces a faster, cheaper, and vastly more reliable product."*
 
 ---
 
@@ -719,7 +826,7 @@ The ML pipeline is formalized in `ai/dvc.yaml` across 4 reproducible stages:
 | **Embedding Model** | `all-MiniLM-L6-v2` | Sentence-Transformers 384-dimensional dense vector |
 | **Skill Match Threshold** | `0.60` | Cosine similarity threshold for semantic synonym matching |
 | **Weights Configuration** | 60% Skills, 20% Projects, 20% Experience | Tuned in `params.yaml` |
-| **Context Blend** | $0.70 \times \text{Granular} + 0.30 \times \text{Overall}$ | Prevents background text dilution |
+| **Context Blend** | 70% Granular + 30% Overall Context | Prevents background text dilution |
 | **Sigmoid Base Multiplier** | `10.0` | Steepness factor for discrimination |
 | **Sigmoid Offset** | `-2.5` | Centers average match around ~70% |
 | **Domain Adjustments** | Tech: 1.0, Finance: 0.92, Healthcare: 0.88 | Industry benchmark calibration |
