@@ -1,0 +1,240 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Skillgap AI - Analysis Overview</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@500;600&amp;family=Space+Grotesk:wght@600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#3d4944",
+                        "on-tertiary-fixed": "#191c1f",
+                        "primary-fixed-dim": "#6edab4",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#44474a",
+                        "on-secondary-fixed-variant": "#494740",
+                        "on-primary-fixed-variant": "#00513d",
+                        "on-secondary-container": "#b9b5ac",
+                        "on-secondary-fixed": "#1d1c16",
+                        "surface-container-lowest": "#0d0e0f",
+                        "secondary-container": "#494740",
+                        "primary": "#5DCAA5",
+                        "background": "#121314",
+                        "secondary-fixed": "#e7e2d9",
+                        "inverse-primary": "#006c52",
+                        "border-subtle": "#2A2D30",
+                        "on-primary-container": "#00523e",
+                        "surface-container": "#1f2021",
+                        "inverse-surface": "#e3e2e3",
+                        "tertiary-fixed-dim": "#c5c6ca",
+                        "on-secondary": "#32302a",
+                        "secondary-fixed-dim": "#cac6bd",
+                        "tertiary-fixed": "#e1e2e6",
+                        "primary-container": "#5dcaa5",
+                        "outline": "#87948d",
+                        "surface-dim": "#121314",
+                        "on-tertiary-container": "#45484b",
+                        "tertiary": "#d1d3d6",
+                        "error": "#ffb4ab",
+                        "on-tertiary": "#2e3134",
+                        "surface-tint": "#5DCAA5",
+                        "inverse-on-surface": "#303031",
+                        "on-surface-variant": "#bdcac2",
+                        "secondary": "#cac6bd",
+                        "surface-container-high": "#292a2b",
+                        "score-amber": "#F59E0B",
+                        "on-error": "#690005",
+                        "text-primary": "#F0EDE8",
+                        "surface-bright": "#39393a",
+                        "text-secondary": "#8B8880",
+                        "on-primary": "#003829",
+                        "error-container": "#93000a",
+                        "surface": "#121314",
+                        "tertiary-container": "#b5b7bb",
+                        "on-background": "#e3e2e3",
+                        "surface-variant": "#343536",
+                        "primary-fixed": "#8af7cf",
+                        "surface-container-low": "#1b1c1d",
+                        "score-green": "#5DCAA5",
+                        "on-surface": "#e3e2e3",
+                        "surface-container-highest": "#343536",
+                        "score-red": "#EF4444",
+                        "on-primary-fixed": "#002117"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "24px",
+                        "margin-mobile": "16px",
+                        "gutter": "16px",
+                        "md": "16px",
+                        "xs": "4px",
+                        "xl": "32px",
+                        "sm": "8px",
+                        "base": "4px",
+                        "margin-desktop": "40px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Space Grotesk"],
+                        "display-lg": ["Space Grotesk"],
+                        "mono-label": ["JetBrains Mono"],
+                        "headline-lg": ["Space Grotesk"],
+                        "mono-data": ["JetBrains Mono"],
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "mono-label": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "mono-data": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .radial-glow {
+            background: radial-gradient(circle at center, rgba(93, 202, 165, 0.08) 0%, rgba(18, 19, 20, 0) 70%);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-lg h-[48px] bg-surface border-b border-border-subtle">
+<div class="flex items-center gap-xl">
+<span class="text-headline-md font-headline-md font-bold text-primary">Skillgap AI</span>
+<nav class="hidden md:flex items-center gap-md h-full">
+<span class="text-primary border-b-2 border-primary h-full flex items-center px-sm text-mono-label">Resume: None</span>
+<span class="text-text-secondary h-full flex items-center px-sm text-mono-label">JD: None</span>
+<span class="text-text-secondary h-full flex items-center px-sm text-mono-label">Analyse: Pending</span>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-high p-xs rounded-lg transition-colors" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-high p-xs rounded-lg transition-colors" data-icon="help">help</button>
+<button class="text-body-sm font-medium text-primary hover:bg-surface-container-high px-sm py-xs rounded-lg transition-colors">Support</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden border border-outline-variant">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="A professional high-resolution avatar of a technical recruiter with a focused expression, styled in a minimalist digital illustration format. The background is a clean, dark navy blue consistent with a high-end enterprise software interface. The character features subtle glasses and a modern corporate look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWVPipB9LmaF5u_3svjfaHNqm6BokmDZEqfEHGWDYoiwgQiOe-LIAt9r4f3HYax-U1b5aDEBI45xAegk8JyWwRxwGSsM3taJrhhuk_pbQRaEVZxGQakWsgduYaF8JU7iIZrEcJNgotCTkdwDS0j0pzG0QwQ1xGEg35ZgrrhTNDzLcgL4bY9HIfIFXwolXAmdanzyw_lPz6EEZaO-e7fD_67JLLoLfxUeWOapHy_-EWxDzpoMUtgpPfbs3EDT32B0-mmTmQ0lj0AQB8">
+</div>
+</div>
+</header>
+<div class="flex h-screen pt-[48px]">
+<!-- Side Panel (Left) -->
+<aside class="fixed left-0 top-[48px] h-full w-[320px] bg-surface-container border-r border-border-subtle flex flex-col p-md gap-lg overflow-y-auto">
+<!-- Branding/Header -->
+<div class="flex flex-col gap-xs mb-md">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary text-[24px]" data-icon="psychology">psychology</span>
+<span class="text-headline-sm font-headline-sm font-bold text-primary">Resume Engine</span>
+</div>
+<span class="text-mono-label text-text-secondary">v2.4.0-stable</span>
+</div>
+<!-- Navigation Links (Contextual Sidebar mapping) -->
+<nav class="flex flex-col gap-xs">
+<a class="flex items-center gap-sm px-sm py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="text-mono-label">Intelligence Overview</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-sm bg-secondary-container text-on-secondary-container rounded-lg font-bold" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="text-mono-label">Resume Parsing</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+<span class="text-mono-label">Skill Gap Analysis</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+<span class="text-mono-label">Bullet Rewriter</span>
+</a>
+</nav>
+<hr class="border-border-subtle">
+<!-- Section A: Resume Upload Dropzone -->
+<div class="flex flex-col gap-sm">
+<label class="text-mono-label text-text-secondary uppercase">Source Input</label>
+<div class="w-full h-32 border-2 border-dashed border-primary/40 rounded-xl bg-surface-container-low flex flex-col items-center justify-center gap-sm hover:border-primary transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-primary group-hover:scale-110 transition-transform" data-icon="upload_file">upload_file</span>
+<div class="text-center">
+<p class="text-body-sm font-medium text-on-surface">Drop PDF or click to upload</p>
+<p class="text-mono-label text-text-secondary mt-xs">MAX 5MB</p>
+</div>
+</div>
+</div>
+<!-- Section B: Target JD -->
+<div class="flex flex-col gap-sm">
+<label class="text-mono-label text-text-secondary uppercase">Target Context</label>
+<textarea class="w-full h-48 bg-surface border border-border-subtle rounded-lg p-sm text-body-md text-on-surface placeholder:text-outline-variant focus:outline-none focus:border-primary transition-colors resize-none" placeholder="Paste full JD here..."></textarea>
+</div>
+<!-- Section C: Analyse Button -->
+<div class="mt-auto pb-xl">
+<button class="w-full py-md bg-primary text-on-primary font-bold rounded-lg opacity-[0.38] cursor-not-allowed flex items-center justify-center gap-sm" disabled="">
+<span class="material-symbols-outlined" data-icon="rocket_launch">rocket_launch</span>
+                Analyse Resume
+            </button>
+</div>
+<!-- Sidebar Footer -->
+<div class="flex flex-col gap-xs mt-auto">
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="settings">settings</span>
+<span class="text-mono-label">Settings</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="terminal">terminal</span>
+<span class="text-mono-label">System Logs</span>
+</a>
+</div>
+</aside>
+<!-- Main Canvas (Right Panel) -->
+<main class="ml-[320px] flex-1 h-full overflow-y-auto radial-glow relative">
+<div class="max-w-[1440px] mx-auto min-h-full flex flex-col items-center justify-center p-xl">
+<!-- Empty State Centerpiece -->
+<div class="flex flex-col items-center text-center max-w-lg">
+<div class="relative mb-lg">
+<!-- Score Gauge Placeholder Background -->
+<div class="w-48 h-48 rounded-full border-[6px] border-surface-container-highest border-t-primary/20 opacity-20 flex items-center justify-center">
+<span class="material-symbols-outlined text-[64px] text-primary" data-icon="insights">insights</span>
+</div>
+</div>
+<h1 class="text-headline-lg font-headline-lg text-text-primary mb-sm">Your analysis will appear here</h1>
+<p class="text-body-lg text-text-secondary mb-xl">Upload a resume and paste a JD to begin. Our engine will calculate compatibility scores and generate optimized bullet points.</p>
+</div>
+<!-- Value Proposition Chips -->
+<div class="flex flex-wrap justify-center gap-md">
+<div class="flex items-center gap-sm px-md py-sm bg-surface-container-high border border-border-subtle rounded-full">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="check_circle">check_circle</span>
+<span class="text-mono-label text-on-surface">Hiring probability score</span>
+</div>
+<div class="flex items-center gap-sm px-md py-sm bg-surface-container-high border border-border-subtle rounded-full">
+<span class="material-symbols-outlined text-score-amber text-[18px]" data-icon="signal_cellular_alt">signal_cellular_alt</span>
+<span class="text-mono-label text-on-surface">Missing skills ranked</span>
+</div>
+<div class="flex items-center gap-sm px-md py-sm bg-surface-container-high border border-border-subtle rounded-full">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="auto_awesome">auto_awesome</span>
+<span class="text-mono-label text-on-surface">AI-rewritten bullets</span>
+</div>
+</div>
+<!-- Visual Accent -->
+<div class="absolute bottom-12 right-12 opacity-5 pointer-events-none">
+<span class="material-symbols-outlined text-[320px]" data-icon="token">token</span>
+</div>
+</div>
+</main>
+</div>
+</body></html>

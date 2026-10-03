@@ -1,0 +1,308 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Skillgap AI | First-Time Experience</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@600;700&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "outline-variant": "#3d4944",
+                "on-tertiary-fixed": "#191c1f",
+                "primary-fixed-dim": "#6edab4",
+                "on-error-container": "#ffdad6",
+                "on-tertiary-fixed-variant": "#44474a",
+                "on-secondary-fixed-variant": "#494740",
+                "on-primary-fixed-variant": "#00513d",
+                "on-secondary-container": "#b9b5ac",
+                "on-secondary-fixed": "#1d1c16",
+                "surface-container-lowest": "#0d0e0f",
+                "secondary-container": "#494740",
+                "primary": "#5DCAA5",
+                "background": "#121314",
+                "secondary-fixed": "#e7e2d9",
+                "inverse-primary": "#006c52",
+                "border-subtle": "#2A2D30",
+                "on-primary-container": "#00523e",
+                "surface-container": "#1f2021",
+                "inverse-surface": "#e3e2e3",
+                "tertiary-fixed-dim": "#c5c6ca",
+                "on-secondary": "#32302a",
+                "secondary-fixed-dim": "#cac6bd",
+                "tertiary-fixed": "#e1e2e6",
+                "primary-container": "#5dcaa5",
+                "outline": "#87948d",
+                "surface-dim": "#121314",
+                "on-tertiary-container": "#45484b",
+                "tertiary": "#d1d3d6",
+                "error": "#ffb4ab",
+                "on-tertiary": "#2e3134",
+                "surface-tint": "#6edab4",
+                "inverse-on-surface": "#303031",
+                "on-surface-variant": "#bdcac2",
+                "secondary": "#cac6bd",
+                "surface-container-high": "#292a2b",
+                "score-amber": "#F59E0B",
+                "on-error": "#690005",
+                "text-primary": "#F0EDE8",
+                "surface-bright": "#39393a",
+                "text-secondary": "#8B8880",
+                "on-primary": "#003829",
+                "error-container": "#93000a",
+                "surface": "#121314",
+                "tertiary-container": "#b5b7bb",
+                "on-background": "#e3e2e3",
+                "surface-variant": "#343536",
+                "primary-fixed": "#8af7cf",
+                "surface-container-low": "#1b1c1d",
+                "score-green": "#5DCAA5",
+                "on-surface": "#e3e2e3",
+                "surface-container-highest": "#343536",
+                "score-red": "#EF4444",
+                "on-primary-fixed": "#002117"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "md": "16px",
+                "margin-desktop": "40px",
+                "lg": "24px",
+                "base": "4px",
+                "xl": "32px",
+                "xs": "4px",
+                "margin-mobile": "16px",
+                "gutter": "16px",
+                "sm": "8px"
+        },
+        "fontFamily": {
+                "mono-data": ["JetBrains Mono"],
+                "body-lg": ["Inter"],
+                "headline-lg": ["Space Grotesk"],
+                "body-sm": ["Inter"],
+                "display-lg": ["Space Grotesk"],
+                "body-md": ["Inter"],
+                "headline-md": ["Space Grotesk"],
+                "mono-label": ["JetBrains Mono"],
+                "display-lg-mobile": ["Space Grotesk"]
+        },
+        "fontSize": {
+                "mono-data": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                "mono-label": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                "display-lg-mobile": ["36px", {"lineHeight": "42px", "fontWeight": "700"}]
+        }
+      },
+    },
+  }
+</script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      line-height: 1;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #1E293B;
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased overflow-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-lg bg-surface border-b border-border-subtle h-[48px]">
+<div class="flex items-center gap-md">
+<span class="text-headline-md font-headline-md font-bold text-primary">Skillgap AI</span>
+<nav class="hidden md:flex items-center gap-md h-full ml-lg">
+<a class="text-text-secondary hover:bg-surface-container-high transition-colors duration-200 px-sm py-xs font-mono-label text-mono-label" href="#">Analysis: Ready</a>
+<a class="text-text-secondary hover:bg-surface-container-high transition-colors duration-200 px-sm py-xs font-mono-label text-mono-label" href="#">Status: Idle</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<button class="flex items-center text-text-secondary hover:bg-surface-container-high p-xs rounded transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="flex items-center text-text-secondary hover:bg-surface-container-high p-xs rounded transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<button class="bg-surface-container-highest px-md py-xs rounded text-body-sm font-body-sm text-primary hover:bg-surface-bright transition-colors">Support</button>
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center border border-outline-variant overflow-hidden">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA59o0mBf7azlTUlBb1XHRKPipLXVwrkzeXf50dYlVEsHdJA4V5gck4BKY0aYk3N3NcfdVUqV0apOZRYVaSSwNRU1XByA9iy1KlRhbLWwNC5L5xc8xFgEv6T6_qGYg5B-tVZm8c7Mrk6r6I3hV1x_amG_2upqFKp_BPAqdmokYfBSkNpnt0BcavKVNOuBEerRWwaEPfXzj5U12pIrY6qGIb3bj66uM0SQSqotPOqGWPEqbNBrEbA88naG3VwoMiRCNfD4sGQueo84TV">
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full flex flex-col p-md gap-sm bg-surface-container border-r border-border-subtle w-[320px] pt-[64px] z-40">
+<div class="flex items-center gap-md mb-lg px-xs">
+<div class="w-10 h-10 bg-primary rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary" data-icon="psychology">psychology</span>
+</div>
+<div>
+<h2 class="text-headline-sm font-headline-sm font-bold text-primary">Resume Engine</h2>
+<p class="text-mono-label font-mono-label text-text-secondary">v2.4.0-stable</p>
+</div>
+</div>
+<nav class="flex flex-col gap-xs flex-1">
+<a class="flex items-center gap-md px-md py-sm hover:bg-surface-variant transition-all text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-mono-label text-mono-label">Intelligence Overview</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm bg-secondary-container text-on-secondary-container rounded-lg font-bold" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-mono-label text-mono-label">Resume Parsing</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm hover:bg-surface-variant transition-all text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+<span class="font-mono-label text-mono-label">Skill Gap Analysis</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm hover:bg-surface-variant transition-all text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+<span class="font-mono-label text-mono-label">Bullet Rewriter</span>
+</a>
+</nav>
+<div class="mt-auto flex flex-col gap-xs pt-md border-t border-border-subtle">
+<button class="w-full py-md px-lg bg-primary text-on-primary font-bold rounded-lg active:opacity-80 transition-opacity flex items-center justify-center gap-sm">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+        Analyse Resume
+      </button>
+<a class="flex items-center gap-md px-md py-sm hover:bg-surface-variant transition-all text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-mono-label text-mono-label">Settings</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm hover:bg-surface-variant transition-all text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="font-mono-label text-mono-label">System Logs</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-[320px] mt-[48px] h-[calc(100vh-48px)] flex">
+<!-- Left Panel: Resume Section -->
+<section class="w-1/2 p-xl border-r border-border-subtle bg-surface-container-low flex flex-col gap-lg">
+<div class="flex flex-col gap-sm">
+<h1 class="text-headline-lg font-headline-lg text-text-primary">Resume Processor</h1>
+<p class="text-body-md font-body-md text-text-secondary">Upload your professional details to start the multi-dimensional gap analysis.</p>
+</div>
+<!-- Pulse Onboarding Tooltip -->
+<div class="relative group">
+<div class="absolute -top-4 -left-4 w-8 h-8 rounded-full bg-primary/20 animate-ping"></div>
+<div class="absolute -top-1 -left-1 w-2 h-2 rounded-full bg-primary"></div>
+<div class="border-2 border-dashed border-border-subtle rounded-xl p-xl flex flex-col items-center justify-center gap-lg bg-surface-container h-[400px] transition-all hover:border-primary/50 group-hover:bg-surface-container-high">
+<div class="w-16 h-16 rounded-full bg-surface-container-highest flex items-center justify-center border border-outline-variant">
+<span class="material-symbols-outlined text-primary text-4xl" data-icon="upload_file">upload_file</span>
+</div>
+<div class="text-center">
+<h3 class="text-headline-md font-headline-md text-text-primary">Start here — upload your PDF resume</h3>
+<p class="text-body-md font-body-md text-text-secondary mt-xs">PDF, DOCX, or Markdown supported (Max 10MB)</p>
+</div>
+<button class="px-xl py-md bg-surface-container-highest border border-outline-variant rounded-lg font-bold text-primary hover:bg-primary/10 transition-all">
+            Choose File
+          </button>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-md mt-auto">
+<div class="p-md rounded-lg bg-surface-container border border-border-subtle">
+<div class="flex items-center gap-sm mb-xs">
+<span class="material-symbols-outlined text-score-green text-sm" data-icon="security">security</span>
+<span class="text-mono-label font-mono-label text-text-secondary">PRIVACY</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant leading-tight">Data is processed locally. We do not store resumes on persistent databases without consent.</p>
+</div>
+<div class="p-md rounded-lg bg-surface-container border border-border-subtle">
+<div class="flex items-center gap-sm mb-xs">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="bolt">bolt</span>
+<span class="text-mono-label font-mono-label text-text-secondary">SPEED</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant leading-tight">Average parsing time is 1.4s per page. Optimized for technical keyword density.</p>
+</div>
+</div>
+</section>
+<!-- Right Panel: EmptyState / Demo Widget -->
+<section class="w-1/2 p-xl bg-surface-dim overflow-y-auto custom-scrollbar flex flex-col items-center justify-center">
+<div class="max-w-md w-full space-y-xl">
+<!-- Demo Card Widget -->
+<div class="relative p-[1px] rounded-xl bg-gradient-to-br from-primary/30 to-transparent">
+<div class="bg-surface-container-highest rounded-[11px] p-lg border border-border-subtle shadow-2xl">
+<div class="flex items-center justify-between mb-lg">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-surface-container-low border border-border-subtle flex items-center justify-center">
+<span class="material-symbols-outlined text-text-secondary" data-icon="account_circle">account_circle</span>
+</div>
+<div>
+<div class="h-4 w-24 bg-surface-container-low rounded animate-pulse"></div>
+<div class="h-3 w-32 bg-surface-container-low rounded mt-xs animate-pulse opacity-50"></div>
+</div>
+</div>
+<!-- Arc Mockup -->
+<div class="relative w-16 h-16 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90">
+<circle class="text-surface-container-low" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-score-green" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-dasharray="175" stroke-dashoffset="40" stroke-width="4"></circle>
+</svg>
+<span class="absolute text-mono-label font-mono-label text-score-green">85%</span>
+</div>
+</div>
+<div class="space-y-md">
+<div class="flex items-center justify-between py-xs border-b border-border-subtle">
+<span class="text-mono-label font-mono-label text-text-secondary">TECHNICAL STACK</span>
+<span class="text-mono-label font-mono-label text-score-green">MATCH</span>
+</div>
+<div class="flex flex-wrap gap-sm">
+<span class="px-sm py-1 rounded bg-score-green/10 border border-score-green/30 text-[10px] text-score-green font-mono-label">REACT</span>
+<span class="px-sm py-1 rounded bg-score-green/10 border border-score-green/30 text-[10px] text-score-green font-mono-label">PYTHON</span>
+<span class="px-sm py-1 rounded bg-score-amber/10 border border-score-amber/30 text-[10px] text-score-amber font-mono-label">K8S</span>
+<span class="px-sm py-1 rounded bg-score-red/10 border border-score-red/30 text-[10px] text-score-red font-mono-label">AWS</span>
+</div>
+<div class="mt-lg p-md bg-surface-container-lowest border border-border-subtle rounded font-mono-data text-mono-data text-score-green">
+<span class="text-text-secondary mr-sm">&gt;</span> analysis complete. 4 gaps found.
+              </div>
+</div>
+</div>
+</div>
+<!-- Empty State CTA -->
+<div class="text-center flex flex-col items-center">
+<h2 class="text-headline-md font-headline-md text-text-primary mb-md">Unlock Full Insights</h2>
+<p class="text-body-md font-body-md text-text-secondary mb-lg">
+            Once you upload a resume, our engine will generate a comprehensive skill-gap analysis, bullet rewrites, and role-specific readiness scores.
+          </p>
+<div class="flex items-center gap-lg">
+<button class="text-primary font-bold hover:underline flex items-center gap-xs">
+              View sample report 
+              <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<div class="w-px h-4 bg-border-subtle"></div>
+<button class="text-text-secondary hover:text-text-primary text-body-sm font-body-sm flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm" data-icon="play_circle">play_circle</span>
+              Watch Demo
+            </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Illustration Overlay (Subtle) -->
+<div class="fixed bottom-0 right-0 w-[400px] h-[400px] opacity-10 pointer-events-none -z-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary via-transparent to-transparent blur-3xl"></div>
+</body></html>

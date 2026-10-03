@@ -1,0 +1,296 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Skillgap AI - Analysis in Progress</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        .shimmer-bg {
+            background: linear-gradient(90deg, #161b2b 25%, #25293a 50%, #161b2b 75%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite linear;
+        }
+        .terminal-scroll::-webkit-scrollbar { width: 4px; }
+        .terminal-scroll::-webkit-scrollbar-track { background: #050505; }
+        .terminal-scroll::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 2px; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary-fixed-variant": "#40465b",
+                      "outline": "#908fa0",
+                      "score-red": "#EF4444",
+                      "on-secondary": "#233143",
+                      "primary": "#5DCAA5",
+                      "surface-container-low": "#161b2b",
+                      "surface-container": "#1a1f2f",
+                      "on-error-container": "#ffdad6",
+                      "inverse-on-surface": "#2b3040",
+                      "surface-container-lowest": "#090e1c",
+                      "tertiary-fixed": "#dbe2fb",
+                      "tertiary": "#bfc6df",
+                      "error-container": "#93000a",
+                      "text-secondary": "#94A3B8",
+                      "secondary-container": "#39485a",
+                      "primary-container": "#5DCAA5",
+                      "outline-variant": "#464554",
+                      "surface": "#0e1322",
+                      "score-green": "#5DCAA5",
+                      "on-error": "#690005",
+                      "on-secondary-fixed-variant": "#39485a",
+                      "on-background": "#dee1f7",
+                      "inverse-primary": "#006c52",
+                      "surface-bright": "#343949",
+                      "on-primary-fixed-variant": "#00513d",
+                      "tertiary-container": "#8a90a7",
+                      "surface-variant": "#2f3445",
+                      "background": "#0e1322",
+                      "on-primary": "#003829",
+                      "on-primary-container": "#00523e",
+                      "on-tertiary": "#293043",
+                      "surface-dim": "#0e1322",
+                      "primary-fixed": "#8af7cf",
+                      "secondary-fixed": "#d4e4fa",
+                      "secondary-fixed-dim": "#b9c8de",
+                      "on-secondary-container": "#a7b6cc",
+                      "tertiary-fixed-dim": "#bfc6df",
+                      "on-tertiary-fixed": "#141b2d",
+                      "error": "#ffb4ab",
+                      "primary-fixed-dim": "#6edab4",
+                      "inverse-surface": "#dee1f7",
+                      "surface-tint": "#5DCAA5",
+                      "on-surface-variant": "#c7c4d7",
+                      "score-amber": "#F59E0B",
+                      "border-subtle": "#1E293B",
+                      "on-surface": "#dee1f7",
+                      "text-primary": "#F1F5F9",
+                      "on-primary-fixed": "#002117",
+                      "surface-container-high": "#25293a",
+                      "on-tertiary-container": "#22293c",
+                      "secondary": "#b9c8de",
+                      "on-secondary-fixed": "#0d1c2d",
+                      "surface-container-highest": "#2f3445"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "lg": "24px",
+                      "margin-mobile": "16px",
+                      "gutter": "16px",
+                      "md": "16px",
+                      "xs": "4px",
+                      "xl": "32px",
+                      "sm": "8px",
+                      "base": "4px",
+                      "margin-desktop": "40px"
+              },
+              "fontFamily": {
+                      "headline-md": ["Space Grotesk"],
+                      "display-lg": ["Space Grotesk"],
+                      "mono-label": ["JetBrains Mono"],
+                      "headline-lg": ["Space Grotesk"],
+                      "mono-data": ["JetBrains Mono"],
+                      "body-sm": ["Inter"],
+                      "body-md": ["Inter"],
+                      "body-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "mono-label": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                      "mono-data": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                      "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-lg bg-surface border-b border-border-subtle h-[48px]">
+<div class="flex items-center gap-md">
+<span class="text-headline-md font-headline-md font-bold text-primary">Skillgap AI</span>
+<nav class="hidden md:flex gap-md ml-xl">
+<span class="text-primary border-b-2 border-primary cursor-pointer px-sm font-body-md">Analysis: Running</span>
+<span class="text-text-secondary hover:bg-surface-container-high transition-colors px-sm cursor-pointer font-body-md">Status: Processing</span>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<button class="text-text-secondary hover:text-primary transition-colors flex items-center">
+<span class="material-symbols-outlined mr-xs">help</span>
+<span class="text-body-md">Support</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant overflow-hidden">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgxL-Xh_8-kCZuTuS-F50uLcmho402ioi20yoZ_g26WPgAGSd6JI5YNf1wGeWRd7oJkQaSMXlJyJfcGkkIDNNNIOY9hNRY2-_IBSV3wo12GXzuCQ-t38KN7gkkkfoaaS6R05aZY7MSI4H4UxQodTyl0flFckG5f1fCdcTvwq5gQA8hb9i0dIV_5absrZkhJ55KEWaZen233YtmYD_sFhsf6Mebmu-JgTCkkkxyOTnT8mw_wMicV0yy74O-hQbyDY81eyqUm0pXaoD3">
+</div>
+</div>
+</header>
+<!-- Main Layout Container -->
+<main class="flex h-screen pt-[48px]">
+<!-- SideNavBar (Left Fixed Panel) -->
+<aside class="fixed left-0 top-[48px] h-[calc(100vh-48px)] w-[320px] flex flex-col bg-surface-container border-r border-border-subtle p-md gap-lg overflow-y-auto">
+<!-- Section A: Uploaded Resume -->
+<div class="space-y-sm">
+<h3 class="text-mono-label font-mono-label uppercase tracking-widest text-text-secondary">Source File</h3>
+<div class="flex items-center gap-sm p-sm bg-surface-container-lowest border border-border-subtle rounded-lg">
+<span class="material-symbols-outlined text-primary" data-weight="fill">description</span>
+<span class="text-body-md text-on-surface truncate">frontend_dev.pdf</span>
+<span class="material-symbols-outlined text-score-green text-[16px]">check_circle</span>
+</div>
+</div>
+<!-- Section B: Job Description -->
+<div class="space-y-sm">
+<h3 class="text-mono-label font-mono-label uppercase tracking-widest text-text-secondary">Target Requirement</h3>
+<div class="p-sm bg-surface-container-lowest border border-border-subtle rounded-lg text-body-sm text-on-surface-variant leading-relaxed">
+<p class="line-clamp-6 italic">"Seeking a Senior Frontend Engineer with 5+ years experience in React, TypeScript, and state management. Strong understanding of design systems, accessibility, and performance optimization required. Candidate must have experience with Tailwind CSS..."</p>
+<div class="mt-sm text-primary text-mono-label cursor-pointer">VIEW FULL JD</div>
+</div>
+</div>
+<!-- Section C: ProgressTerminal -->
+<div class="mt-auto space-y-md">
+<div class="bg-[#050505] rounded-lg border border-border-subtle overflow-hidden flex flex-col h-[240px]">
+<div class="flex items-center justify-between px-md py-xs bg-surface-container-high border-b border-border-subtle">
+<span class="text-mono-label text-text-secondary">ANALYSIS_LOGS_V2.4</span>
+<div class="flex gap-xs">
+<div class="w-2 h-2 rounded-full bg-score-red/50"></div>
+<div class="w-2 h-2 rounded-full bg-score-amber/50"></div>
+<div class="w-2 h-2 rounded-full bg-score-green/50"></div>
+</div>
+</div>
+<div class="p-md font-mono-data text-mono-data space-y-xs overflow-y-auto terminal-scroll flex-1">
+<div class="flex items-start gap-sm">
+<span class="text-score-green">✓</span>
+<span class="text-score-green">Resume parsed successfully</span>
+</div>
+<div class="flex items-start gap-sm">
+<span class="text-score-green">✓</span>
+<span class="text-score-green">JD extracted: 14 key entities</span>
+</div>
+<div class="flex items-start gap-sm">
+<span class="text-score-amber animate-pulse">⟳</span>
+<span class="text-on-surface">Generating semantic embeddings...</span>
+</div>
+<div class="flex items-start gap-sm opacity-40">
+<span class="text-text-secondary">○</span>
+<span class="text-text-secondary">Computing match score</span>
+</div>
+<div class="flex items-start gap-sm opacity-40">
+<span class="text-text-secondary">○</span>
+<span class="text-text-secondary">Validating bullet points</span>
+</div>
+</div>
+<!-- Terminal Progress Footer -->
+<div class="p-md bg-[#080808] border-t border-border-subtle">
+<div class="flex justify-between items-center mb-xs">
+<span class="text-mono-label text-text-secondary uppercase">Analysis Progress</span>
+<span class="text-mono-label text-primary">~12s remaining</span>
+</div>
+<div class="w-full h-1 bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full bg-primary w-2/3 transition-all duration-1000"></div>
+</div>
+</div>
+</div>
+<button class="w-full py-md bg-surface-container-highest text-on-surface font-headline-md rounded-lg opacity-50 cursor-not-allowed border border-border-subtle flex items-center justify-center gap-sm">
+<span class="material-symbols-outlined animate-spin">sync</span>
+                    Processing...
+                </button>
+</div>
+</aside>
+<!-- Right Panel (Scrollable Content Canvas) -->
+<div class="ml-[320px] flex-1 overflow-y-auto bg-background p-xl">
+<!-- Loading Overlay Message -->
+<div class="flex items-center gap-md mb-xl p-md bg-surface-container-low border border-border-subtle rounded-xl animate-pulse">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">psychology</span>
+</div>
+<div>
+<h2 class="text-headline-md font-headline-md text-text-primary">Analysing your resume...</h2>
+<p class="text-body-md text-text-secondary">Comparing 14 specific skills and experience benchmarks against the JD requirements.</p>
+</div>
+</div>
+<!-- Skeleton Content Grid -->
+<div class="grid grid-cols-12 gap-lg">
+<!-- Main Verdict Skeleton -->
+<div class="col-span-12 lg:col-span-8 h-[220px] shimmer-bg rounded-xl border border-border-subtle p-lg flex gap-lg">
+<div class="w-32 h-32 rounded-full border-4 border-surface-container animate-pulse flex-shrink-0"></div>
+<div class="flex-1 space-y-md">
+<div class="h-8 w-48 bg-surface-container rounded-lg animate-pulse"></div>
+<div class="h-4 w-full bg-surface-container rounded animate-pulse"></div>
+<div class="h-4 w-3/4 bg-surface-container rounded animate-pulse"></div>
+<div class="flex gap-sm pt-md">
+<div class="h-8 w-24 bg-surface-container rounded-full animate-pulse"></div>
+<div class="h-8 w-24 bg-surface-container rounded-full animate-pulse"></div>
+</div>
+</div>
+</div>
+<!-- Score Profile Skeleton -->
+<div class="col-span-12 lg:col-span-4 h-[220px] shimmer-bg rounded-xl border border-border-subtle p-lg flex flex-col justify-between">
+<div class="h-6 w-32 bg-surface-container rounded-lg animate-pulse"></div>
+<div class="space-y-sm">
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full w-1/3 bg-primary/20"></div>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full w-1/2 bg-primary/20"></div>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full w-1/4 bg-primary/20"></div>
+</div>
+</div>
+</div>
+<!-- Skill Gap Grid Skeleton -->
+<div class="col-span-12">
+<div class="h-8 w-48 bg-surface-container-high rounded-lg mb-md animate-pulse"></div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-md">
+<div class="h-32 shimmer-bg rounded-lg border border-border-subtle p-md space-y-sm">
+<div class="h-6 w-20 bg-surface-container rounded-lg"></div>
+<div class="h-4 w-full bg-surface-container rounded"></div>
+</div>
+<div class="h-32 shimmer-bg rounded-lg border border-border-subtle p-md space-y-sm">
+<div class="h-6 w-20 bg-surface-container rounded-lg"></div>
+<div class="h-4 w-full bg-surface-container rounded"></div>
+</div>
+<div class="h-32 shimmer-bg rounded-lg border border-border-subtle p-md space-y-sm">
+<div class="h-6 w-20 bg-surface-container rounded-lg"></div>
+<div class="h-4 w-full bg-surface-container rounded"></div>
+</div>
+<div class="h-32 shimmer-bg rounded-lg border border-border-subtle p-md space-y-sm">
+<div class="h-6 w-20 bg-surface-container rounded-lg"></div>
+<div class="h-4 w-full bg-surface-container rounded"></div>
+</div>
+</div>
+</div>
+<!-- Bullet Rewriter Skeleton -->
+<div class="col-span-12 space-y-md">
+<div class="h-8 w-64 bg-surface-container-high rounded-lg mb-md animate-pulse"></div>
+<div class="h-[140px] shimmer-bg rounded-xl border border-border-subtle p-lg flex flex-col justify-center space-y-sm">
+<div class="h-4 w-1/3 bg-surface-container rounded animate-pulse"></div>
+<div class="h-6 w-full bg-surface-container rounded animate-pulse"></div>
+<div class="h-4 w-2/3 bg-surface-container rounded animate-pulse"></div>
+</div>
+<div class="h-[140px] shimmer-bg rounded-xl border border-border-subtle p-lg flex flex-col justify-center space-y-sm">
+<div class="h-4 w-1/3 bg-surface-container rounded animate-pulse"></div>
+<div class="h-6 w-full bg-surface-container rounded animate-pulse"></div>
+<div class="h-4 w-2/3 bg-surface-container rounded animate-pulse"></div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

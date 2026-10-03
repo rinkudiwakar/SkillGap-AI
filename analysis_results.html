@@ -1,0 +1,447 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        body {
+            background-color: #121314;
+            color: #e3e2e3;
+            font-family: 'Inter', sans-serif;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .score-gauge {
+            transform: rotate(-90deg);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #121314;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1f2021;
+            border-radius: 10px;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#3d4944",
+                        "on-tertiary-fixed": "#191c1f",
+                        "primary-fixed-dim": "#6edab4",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#44474a",
+                        "on-secondary-fixed-variant": "#494740",
+                        "on-primary-fixed-variant": "#00513d",
+                        "on-secondary-container": "#b9b5ac",
+                        "on-secondary-fixed": "#1d1c16",
+                        "surface-container-lowest": "#0d0e0f",
+                        "secondary-container": "#494740",
+                        "primary": "#5DCAA5",
+                        "background": "#121314",
+                        "secondary-fixed": "#e7e2d9",
+                        "inverse-primary": "#006c52",
+                        "border-subtle": "#2A2D30",
+                        "on-primary-container": "#00523e",
+                        "surface-container": "#1f2021",
+                        "inverse-surface": "#e3e2e3",
+                        "tertiary-fixed-dim": "#c5c6ca",
+                        "on-secondary": "#32302a",
+                        "secondary-fixed-dim": "#cac6bd",
+                        "tertiary-fixed": "#e1e2e6",
+                        "primary-container": "#5dcaa5",
+                        "outline": "#87948d",
+                        "surface-dim": "#121314",
+                        "on-tertiary-container": "#45484b",
+                        "tertiary": "#d1d3d6",
+                        "error": "#ffb4ab",
+                        "on-tertiary": "#2e3134",
+                        "surface-tint": "#6edab4",
+                        "inverse-on-surface": "#303031",
+                        "on-surface-variant": "#bdcac2",
+                        "secondary": "#cac6bd",
+                        "surface-container-high": "#292a2b",
+                        "score-amber": "#F59E0B",
+                        "on-error": "#690005",
+                        "text-primary": "#F0EDE8",
+                        "surface-bright": "#39393a",
+                        "text-secondary": "#8B8880",
+                        "on-primary": "#003829",
+                        "error-container": "#93000a",
+                        "surface": "#121314",
+                        "tertiary-container": "#b5b7bb",
+                        "on-background": "#e3e2e3",
+                        "surface-variant": "#343536",
+                        "primary-fixed": "#8af7cf",
+                        "surface-container-low": "#1b1c1d",
+                        "score-green": "#5DCAA5",
+                        "on-surface": "#e3e2e3",
+                        "surface-container-highest": "#343536",
+                        "score-red": "#EF4444",
+                        "on-primary-fixed": "#002117"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "margin-desktop": "40px",
+                        "lg": "24px",
+                        "base": "4px",
+                        "xl": "32px",
+                        "xs": "4px",
+                        "margin-mobile": "16px",
+                        "gutter": "16px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "mono-data": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Space Grotesk"],
+                        "body-sm": ["Inter"],
+                        "display-lg": ["Space Grotesk"],
+                        "body-md": ["Inter"],
+                        "headline-md": ["Space Grotesk"],
+                        "mono-label": ["JetBrains Mono"],
+                        "display-lg-mobile": ["Space Grotesk"]
+                    },
+                    "fontSize": {
+                        "mono-data": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "mono-label": ["11px", {"lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "display-lg-mobile": ["36px", {"lineHeight": "42px", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen overflow-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-lg bg-surface border-b border-border-subtle h-[48px]">
+<div class="flex items-center gap-md">
+<span class="text-headline-md font-headline-md font-bold text-primary">Skillgap AI</span>
+<div class="h-4 w-[1px] bg-outline-variant mx-sm"></div>
+<div class="flex items-center gap-sm">
+<span class="text-mono-label font-mono-label text-text-secondary uppercase">Analysis:</span>
+<span class="text-mono-label font-mono-label text-score-green">Ready</span>
+</div>
+<div class="flex items-center gap-sm">
+<span class="text-mono-label font-mono-label text-text-secondary uppercase">Status:</span>
+<span class="text-mono-label font-mono-label text-primary">Idle</span>
+</div>
+</div>
+<nav class="hidden md:flex items-center gap-lg">
+<a class="text-mono-label font-mono-label text-primary border-b-2 border-primary h-[48px] flex items-center" href="#">Resume: frontend_dev.pdf</a>
+<a class="text-mono-label font-mono-label text-text-secondary hover:text-primary transition-colors" href="#">JD: Stripe Senior Frontend</a>
+<a class="text-mono-label font-mono-label text-score-green flex items-center gap-xs" href="#">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                Analyse: Complete
+            </a>
+</nav>
+<div class="flex items-center gap-md">
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-high p-xs rounded transition-colors">notifications</button>
+<button class="material-symbols-outlined text-on-surface-variant hover:bg-surface-container-high p-xs rounded transition-colors">help</button>
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-mono-label font-mono-label text-on-secondary-container">JD</div>
+</div>
+</header>
+<div class="flex h-screen pt-[48px]">
+<!-- Fixed Left Panel -->
+<aside class="w-[320px] shrink-0 border-r border-border-subtle bg-surface-container flex flex-col p-md gap-lg overflow-y-auto custom-scrollbar">
+<div class="flex flex-col gap-sm">
+<span class="text-mono-label font-mono-label text-text-secondary uppercase">Active Workspace</span>
+<div class="flex items-center gap-sm p-sm bg-surface rounded-lg border border-score-green/30">
+<span class="material-symbols-outlined text-score-green">description</span>
+<div class="flex flex-col">
+<span class="text-body-md font-body-md font-semibold text-text-primary truncate w-[200px]">frontend_dev.pdf</span>
+<span class="text-mono-label font-mono-label text-score-green">Extraction: 96% ✓</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-sm">
+<span class="text-mono-label font-mono-label text-text-secondary uppercase">Target Pipeline</span>
+<div class="p-md bg-surface-container-low rounded-lg border border-border-subtle flex flex-col gap-xs">
+<div class="flex items-center justify-between">
+<span class="text-mono-label font-mono-label text-primary">JD SOURCE</span>
+<span class="material-symbols-outlined text-text-secondary text-[16px]">link</span>
+</div>
+<span class="text-body-sm font-body-sm text-text-secondary truncate">linkedin.com/jobs/view/stripe-frontend</span>
+<div class="mt-sm pt-sm border-t border-border-subtle flex items-center justify-between">
+<span class="text-mono-label font-mono-label text-text-secondary">Word Count</span>
+<span class="text-mono-label font-mono-label text-text-primary">342 words</span>
+</div>
+</div>
+</div>
+<div class="mt-auto pt-lg border-t border-border-subtle flex flex-col gap-md">
+<button class="w-full py-md bg-surface-variant text-text-secondary rounded-lg font-headline-md text-headline-md cursor-not-allowed flex items-center justify-center gap-sm" disabled="">
+<span class="material-symbols-outlined">analytics</span>
+                    Analysis Current
+                </button>
+<div class="flex items-center justify-between px-xs">
+<span class="text-mono-label font-mono-label text-text-secondary">v2.4.0-stable</span>
+<div class="flex items-center gap-xs">
+<div class="w-2 h-2 rounded-full bg-score-green shadow-[0_0_8px_rgba(93,202,165,0.5)]"></div>
+<span class="text-mono-label font-mono-label text-text-primary">System Online</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content (Right Panel) -->
+<main class="flex-1 overflow-y-auto custom-scrollbar bg-surface-container-lowest p-xl">
+<div class="max-w-[1200px] mx-auto flex flex-col gap-xl">
+<!-- VERDICT CARD -->
+<section class="bg-surface rounded-xl border border-border-subtle p-lg grid grid-cols-12 gap-lg relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-score-green"></div>
+<!-- Col 1: Score Gauge -->
+<div class="col-span-3 flex flex-col items-center justify-center border-r border-border-subtle">
+<div class="relative w-32 h-32 flex items-center justify-center">
+<svg class="score-gauge w-full h-full" viewBox="0 0 100 100">
+<circle class="text-surface-variant stroke-current" cx="50" cy="50" fill="transparent" r="40" stroke-width="8"></circle>
+<circle class="text-score-green stroke-current" cx="50" cy="50" fill="transparent" r="40" stroke-dasharray="251.2" stroke-dashoffset="30.14" stroke-linecap="round" stroke-width="8"></circle>
+</svg>
+<span class="absolute text-headline-lg font-mono-data text-text-primary">88%</span>
+</div>
+<span class="mt-md text-mono-label font-mono-label text-text-secondary tracking-widest uppercase">MATCH SCORE</span>
+</div>
+<!-- Col 2: Title & Core Metrics -->
+<div class="col-span-4 flex flex-col justify-center px-md border-r border-border-subtle">
+<div class="flex items-center gap-sm mb-xs">
+<span class="px-sm py-xs bg-score-green/10 text-score-green text-mono-label font-mono-label border border-score-green/20 rounded">Strong Match</span>
+<span class="text-mono-label font-mono-label text-text-secondary">3+ YRS EXP</span>
+</div>
+<h2 class="text-headline-lg font-headline-lg text-text-primary mb-md">Senior Frontend Engineer</h2>
+<div class="grid grid-cols-2 gap-md">
+<div>
+<p class="text-mono-label font-mono-label text-text-secondary uppercase">Cosine Match</p>
+<p class="text-body-lg font-mono-data text-text-primary">0.84</p>
+</div>
+<div>
+<p class="text-mono-label font-mono-label text-text-secondary uppercase">Skill Coverage</p>
+<p class="text-body-lg font-mono-data text-text-primary">90%</p>
+</div>
+</div>
+</div>
+<!-- Col 3: Factors -->
+<div class="col-span-5 flex flex-col gap-md">
+<div>
+<span class="text-mono-label font-mono-label text-score-green uppercase mb-sm block">Positive Factors</span>
+<ul class="flex flex-col gap-xs">
+<li class="flex items-center gap-sm text-body-sm text-text-primary">
+<span class="material-symbols-outlined text-score-green text-[16px]">add_circle</span>
+                                    Advanced React mastery demonstrated (Hooks, Patterns)
+                                </li>
+<li class="flex items-center gap-sm text-body-sm text-text-primary">
+<span class="material-symbols-outlined text-score-green text-[16px]">add_circle</span>
+                                    Deep TypeScript architectural experience
+                                </li>
+</ul>
+</div>
+<div class="pt-sm border-t border-border-subtle">
+<span class="text-mono-label font-mono-label text-score-red uppercase mb-sm block">Negative Factors</span>
+<ul class="flex flex-col gap-xs">
+<li class="flex items-center gap-sm text-body-sm text-text-primary">
+<span class="material-symbols-outlined text-score-red text-[16px]">remove_circle</span>
+                                    Missing Next.js 14 specific feature knowledge (App Router)
+                                </li>
+</ul>
+</div>
+</div>
+</section>
+<!-- SKILL GAP REPORT -->
+<section>
+<div class="flex items-center gap-md mb-lg">
+<h3 class="text-headline-md font-headline-md text-text-primary">Skill Gap Analysis</h3>
+<div class="h-px flex-1 bg-border-subtle"></div>
+</div>
+<div class="grid grid-cols-2 gap-xl">
+<!-- Found -->
+<div class="bg-surface-container-low rounded-xl p-md border border-border-subtle">
+<div class="flex items-center justify-between mb-md">
+<span class="text-mono-label font-mono-label text-text-secondary uppercase">Found (9)</span>
+<span class="material-symbols-outlined text-score-green">check_circle</span>
+</div>
+<div class="flex flex-wrap gap-sm">
+<span class="px-sm py-xs bg-score-green/10 border border-score-green/30 text-score-green text-mono-label font-mono-label rounded">React 18</span>
+<span class="px-sm py-xs bg-score-green/10 border border-score-green/30 text-score-green text-mono-label font-mono-label rounded">TypeScript</span>
+<span class="px-sm py-xs bg-score-green/10 border border-score-green/30 text-score-green text-mono-label font-mono-label rounded">Tailwind CSS</span>
+<span class="px-sm py-xs bg-score-green/10 border border-score-green/30 text-score-green text-mono-label font-mono-label rounded">Vite</span>
+<span class="px-sm py-xs bg-score-green/10 border border-score-green/30 text-score-green text-mono-label font-mono-label rounded">GraphQL</span>
+<span class="px-sm py-xs bg-score-green/10 border border-score-green/30 text-score-green text-mono-label font-mono-label rounded">Node.js</span>
+<span class="px-sm py-xs bg-score-green/10 border border-score-green/30 text-score-green text-mono-label font-mono-label rounded">Zustand</span>
+</div>
+</div>
+<!-- Missing -->
+<div class="bg-surface-container-low rounded-xl p-md border border-border-subtle">
+<div class="flex items-center justify-between mb-md">
+<span class="text-mono-label font-mono-label text-text-secondary uppercase">Missing (2)</span>
+<span class="material-symbols-outlined text-score-red">warning</span>
+</div>
+<div class="flex flex-col gap-sm">
+<div class="flex items-center justify-between p-sm bg-score-red/5 rounded border border-score-red/20">
+<div class="flex items-center gap-sm">
+<span class="text-score-red font-bold text-mono-label">CRITICAL:</span>
+<span class="text-body-sm text-text-primary">Next.js (App Router)</span>
+</div>
+<button class="text-primary text-mono-label font-mono-label flex items-center hover:underline">Learn <span class="material-symbols-outlined text-[14px] ml-xs">arrow_forward</span></button>
+</div>
+<div class="flex items-center justify-between p-sm bg-score-amber/5 rounded border border-score-amber/20">
+<div class="flex items-center gap-sm">
+<span class="text-score-amber font-bold text-mono-label">IMPORTANT:</span>
+<span class="text-body-sm text-text-primary">Testing Library (RTL)</span>
+</div>
+<button class="text-primary text-mono-label font-mono-label flex items-center hover:underline">Review <span class="material-symbols-outlined text-[14px] ml-xs">arrow_forward</span></button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- BULLET REWRITER -->
+<section>
+<div class="flex items-center gap-md mb-lg">
+<h3 class="text-headline-md font-headline-md text-text-primary">AI-Rewritten Bullets</h3>
+<div class="h-px flex-1 bg-border-subtle"></div>
+</div>
+<div class="flex flex-col gap-md">
+<!-- Bullet Card 1 -->
+<div class="bg-surface border border-border-subtle rounded-xl overflow-hidden grid grid-cols-2 divide-x divide-border-subtle">
+<div class="p-md bg-surface-container-low">
+<span class="text-mono-label font-mono-label text-text-secondary uppercase mb-sm block">Original Content</span>
+<p class="text-body-md text-text-secondary italic">"Built React components and managed state for the internal dashboard."</p>
+</div>
+<div class="p-md bg-primary/5">
+<div class="flex items-center justify-between mb-sm">
+<span class="text-mono-label font-mono-label text-primary uppercase block">Optimized for Stripe</span>
+<button class="material-symbols-outlined text-primary hover:bg-primary/10 rounded transition-colors text-[18px]">content_copy</button>
+</div>
+<p class="text-body-md text-text-primary font-medium">"Architected a scalable React 18 component library reducing bundle size by 24% and improving dashboard interaction latency by 30%."</p>
+</div>
+</div>
+<!-- Bullet Card 2 -->
+<div class="bg-surface border border-border-subtle rounded-xl overflow-hidden grid grid-cols-2 divide-x divide-border-subtle opacity-90 hover:opacity-100 transition-opacity">
+<div class="p-md bg-surface-container-low">
+<span class="text-mono-label font-mono-label text-text-secondary uppercase mb-sm block">Original Content</span>
+<p class="text-body-md text-text-secondary italic">"Used TypeScript to fix bugs and improve developer experience."</p>
+</div>
+<div class="p-md bg-primary/5">
+<div class="flex items-center justify-between mb-sm">
+<span class="text-mono-label font-mono-label text-primary uppercase block">Optimized for Stripe</span>
+<button class="material-symbols-outlined text-primary hover:bg-primary/10 rounded transition-colors text-[18px]">content_copy</button>
+</div>
+<p class="text-body-md text-text-primary font-medium">"Engineered robust Type-safe APIs using advanced TypeScript utilities, reducing runtime production errors by 40% across the core payments flow."</p>
+</div>
+</div>
+<!-- Bullet Card 3 -->
+<div class="bg-surface border border-border-subtle rounded-xl overflow-hidden grid grid-cols-2 divide-x divide-border-subtle opacity-90 hover:opacity-100 transition-opacity">
+<div class="p-md bg-surface-container-low">
+<span class="text-mono-label font-mono-label text-text-secondary uppercase mb-sm block">Original Content</span>
+<p class="text-body-md text-text-secondary italic">"Worked on UI performance and accessibility."</p>
+</div>
+<div class="p-md bg-primary/5">
+<div class="flex items-center justify-between mb-sm">
+<span class="text-mono-label font-mono-label text-primary uppercase block">Optimized for Stripe</span>
+<button class="material-symbols-outlined text-primary hover:bg-primary/10 rounded transition-colors text-[18px]">content_copy</button>
+</div>
+<p class="text-body-md text-text-primary font-medium">"Pioneered performance optimization initiatives, achieving a 95+ Lighthouse score and ensuring 100% WCAG 2.1 compliance for consumer-facing features."</p>
+</div>
+</div>
+</div>
+</section>
+<!-- ALTERNATE TITLES -->
+<section>
+<div class="flex items-center gap-md mb-lg">
+<h3 class="text-headline-md font-headline-md text-text-primary">Market Proximity</h3>
+<div class="h-px flex-1 bg-border-subtle"></div>
+</div>
+<div class="flex gap-md overflow-x-auto pb-md custom-scrollbar">
+<div class="min-w-[240px] p-md bg-surface border border-border-subtle rounded-lg flex flex-col gap-sm">
+<span class="text-body-md font-bold text-text-primary">React Developer</span>
+<div class="flex items-center justify-between">
+<span class="text-mono-label font-mono-label text-score-green">92% Match</span>
+<div class="h-1.5 w-24 bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-score-green w-[92%]"></div>
+</div>
+</div>
+</div>
+<div class="min-w-[240px] p-md bg-surface border border-border-subtle rounded-lg flex flex-col gap-sm">
+<span class="text-body-md font-bold text-text-primary">Product Engineer</span>
+<div class="flex items-center justify-between">
+<span class="text-mono-label font-mono-label text-score-amber">84% Match</span>
+<div class="h-1.5 w-24 bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-score-amber w-[84%]"></div>
+</div>
+</div>
+</div>
+<div class="min-w-[240px] p-md bg-surface border border-border-subtle rounded-lg flex flex-col gap-sm">
+<span class="text-body-md font-bold text-text-primary">UI Engineer</span>
+<div class="flex items-center justify-between">
+<span class="text-mono-label font-mono-label text-score-amber">79% Match</span>
+<div class="h-1.5 w-24 bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-score-amber w-[79%]"></div>
+</div>
+</div>
+</div>
+<div class="min-w-[240px] p-md bg-surface border border-border-subtle rounded-lg flex flex-col gap-sm">
+<span class="text-body-md font-bold text-text-primary">Fullstack Engineer</span>
+<div class="flex items-center justify-between">
+<span class="text-mono-label font-mono-label text-score-red">62% Match</span>
+<div class="h-1.5 w-24 bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-score-red w-[62%]"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- NEXT ACTIONS STRIP -->
+<section class="bg-score-green/5 border border-score-green/20 rounded-xl p-lg mb-xl">
+<div class="flex flex-col gap-md">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-score-green">rocket_launch</span>
+<span class="text-headline-md font-headline-md text-text-primary">Next Steps to Stripe</span>
+</div>
+<div class="grid grid-cols-4 gap-md">
+<div class="p-md bg-surface border border-border-subtle rounded-lg flex flex-col gap-xs relative overflow-hidden group">
+<span class="text-mono-label font-mono-label text-score-green">STEP 01</span>
+<span class="text-body-md font-bold text-text-primary">Learn Next.js</span>
+<p class="text-body-sm text-text-secondary">Review App Router docs and Server Components.</p>
+<span class="material-symbols-outlined absolute -bottom-2 -right-2 text-score-green/10 text-[48px] group-hover:text-score-green/20 transition-colors">auto_stories</span>
+</div>
+<div class="p-md bg-surface border border-border-subtle rounded-lg flex flex-col gap-xs relative overflow-hidden group">
+<span class="text-mono-label font-mono-label text-score-green">STEP 02</span>
+<span class="text-body-md font-bold text-text-primary">Update Bullets</span>
+<p class="text-body-sm text-text-secondary">Replace legacy bullets with AI-optimized versions.</p>
+<span class="material-symbols-outlined absolute -bottom-2 -right-2 text-score-green/10 text-[48px] group-hover:text-score-green/20 transition-colors">edit_note</span>
+</div>
+<div class="p-md bg-surface border border-border-subtle rounded-lg flex flex-col gap-xs relative overflow-hidden group">
+<span class="text-mono-label font-mono-label text-score-green">STEP 03</span>
+<span class="text-body-md font-bold text-text-primary">Apply to Stripe</span>
+<p class="text-body-sm text-text-secondary">Your profile is now in the top 10% of applicants.</p>
+<span class="material-symbols-outlined absolute -bottom-2 -right-2 text-score-green/10 text-[48px] group-hover:text-score-green/20 transition-colors">send</span>
+</div>
+<div class="p-md bg-surface border border-border-subtle rounded-lg flex flex-col gap-xs relative overflow-hidden group">
+<span class="text-mono-label font-mono-label text-score-green">STEP 04</span>
+<span class="text-body-md font-bold text-text-primary">Save to Tracker</span>
+<p class="text-body-sm text-text-secondary">Keep record of this analysis for future versions.</p>
+<span class="material-symbols-outlined absolute -bottom-2 -right-2 text-score-green/10 text-[48px] group-hover:text-score-green/20 transition-colors">save</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+</body></html>
