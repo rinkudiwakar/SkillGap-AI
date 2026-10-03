@@ -39,60 +39,60 @@ SkillGap AI bridges this divide by decoupling **deterministic mathematical evalu
 
 ```mermaid
 flowchart TB
-    subgraph Client ["Client Tier (Frontend)"]
-        UI["React 18 + Vite SPA"]
+    subgraph Client ["Client Tier: Frontend"]
+        UI["React 18 and Vite SPA"]
         Drop["Ephemeral PDF DropZone"]
-        Polling["Async Polling Engine (/api/result/{task_id})"]
-        Transform["Client-Side Transformation Layer (transform.js)"]
+        Polling["Async Polling Engine: /api/result/task_id"]
+        Transform["Client-Side Transformation Layer: transform.js"]
     end
 
-    subgraph Gateway ["API Gateway Tier (FastAPI)"]
-        Upload["POST /api/upload<br/>(pdfplumber + TempFile Ingestion)"]
-        Match["POST /api/match<br/>(Task Dispatcher & JD Scraper)"]
-        Result["GET /api/result/{task_id}<br/>(Celery AsyncResult Poll)"]
-        Health["GET /health & /ready<br/>(Liveness & Readiness Probes)"]
+    subgraph Gateway ["API Gateway Tier: FastAPI"]
+        Upload["POST /api/upload<br/>pdfplumber and TempFile Ingestion"]
+        Match["POST /api/match<br/>Task Dispatcher and JD Scraper"]
+        Result["GET /api/result/task_id<br/>Celery AsyncResult Poll"]
+        Health["GET /health and /ready<br/>Liveness and Readiness Probes"]
     end
 
-    subgraph Broker ["Message & Caching Tier (Redis)"]
+    subgraph Broker ["Message and Caching Tier: Redis"]
         RedisQueue[("Redis 7.0<br/>DB 0: Celery Task Broker<br/>DB 1: Result Backend Store")]
     end
 
-    subgraph Compute ["Asynchronous Worker Tier (Celery)"]
-        Worker["Celery Worker Pool (match_pipeline)"]
+    subgraph Compute ["Asynchronous Worker Tier: Celery"]
+        Worker["Celery Worker Pool: match_pipeline"]
         subgraph Pipeline ["10-Step Pipeline Execution"]
-            Clean["Text Sanitization & Normalization"]
+            Clean["Text Sanitization and Normalization"]
             Taxonomy["Skill Taxonomy Expansion"]
-            Embed["Dense Vector Encoding (all-MiniLM-L6-v2)"]
-            Score["Granular Cosine Scoring & Blending"]
+            Embed["Dense Vector Encoding: all-MiniLM-L6-v2"]
+            Score["Granular Cosine Scoring and Blending"]
             Sigmoid["Calibrated Sigmoid Hiring Probability"]
             LLMCall["Comprehensive Dual-Provider LLM Chain"]
         end
     end
 
     subgraph LLM ["Generative AI Layer"]
-        Groq["Primary: Groq API<br/>(Llama 3.3-70B Versatile @ 300+ tok/s)"]
-        Together["Fallback: Together AI<br/>(Mistral-Small-24B-Instruct)"]
+        Groq["Primary: Groq API<br/>Llama 3.3-70B Versatile at 300+ tok/s"]
+        Together["Fallback: Together AI<br/>Mistral-Small-24B-Instruct"]
     end
 
-    subgraph Storage ["Persistence Tier (Supabase)"]
-        Auth["Supabase GoTrue (JWT Authentication)"]
+    subgraph Storage ["Persistence Tier: Supabase"]
+        Auth["Supabase GoTrue: JWT Authentication"]
         DB[("PostgreSQL Database<br/>user_profiles, resumes,<br/>match_results, applications")]
     end
 
     %% Interactions
     Drop -->|Multipart PDF| Upload
-    Upload -->|Returns resume_id & text| UI
-    UI -->|JSON: resume_text + jd_text| Match
+    Upload -->|Returns resume_id and text| UI
+    UI -->|JSON: resume_text and jd_text| Match
     Match -->|Enqueues Task| RedisQueue
     RedisQueue -->|Consumes Task| Worker
     Worker --> Pipeline
-    LLMCall -->|Fast HTTP Call (6s timeout)| Groq
-    LLMCall -.->|Auto Failover on 429/Error| Together
+    LLMCall -->|Fast HTTP Call: 6s timeout| Groq
+    LLMCall -.->|Auto Failover on error or rate limit| Together
     Worker -->|Writes Output Payload| RedisQueue
-    Polling -->|Polls every 2s| Result
+    Polling -->|Polls every 2 seconds| Result
     Result -->|Checks Status| RedisQueue
     Transform -->|Normalizes Raw JSON| UI
-    UI -->|Persists Result & Tracks History| DB
+    UI -->|Persists Result and Tracks History| DB
     UI -->|User Session Management| Auth
 ```
 

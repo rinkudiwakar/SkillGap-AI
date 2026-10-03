@@ -111,61 +111,61 @@ SkillGap AI decouples **objective mathematical evaluation** from **subjective ge
 
 ```mermaid
 flowchart TB
-    subgraph Client ["Frontend (React + Vite)"]
+    subgraph Client ["Frontend: React and Vite"]
         UI["Modern Web UI / Landing / Dashboard"]
-        Store["State Management & Storage"]
-        Poll["Async Polling Engine (/api/result/{task_id})"]
+        Store["State Management and Storage"]
+        Poll["Async Polling Engine: /api/result/task_id"]
     end
 
-    subgraph Gateway ["API Gateway (FastAPI)"]
-        Upload["POST /api/upload<br/>(Ephemeral PDF Ingestion)"]
-        Match["POST /api/match<br/>(Task Dispatcher)"]
-        Result["GET /api/result/{task_id}<br/>(Status & Result Polling)"]
-        Health["GET /health & /ready<br/>(Liveness Probes)"]
+    subgraph Gateway ["API Gateway: FastAPI"]
+        Upload["POST /api/upload<br/>Ephemeral PDF Ingestion"]
+        Match["POST /api/match<br/>Task Dispatcher"]
+        Result["GET /api/result/task_id<br/>Status and Result Polling"]
+        Health["GET /health and /ready<br/>Liveness Probes"]
     end
 
-    subgraph Queue ["Message Broker & State Cache"]
-        Redis[("Redis 7 (In-Memory)<br/>DB 0: Celery Broker<br/>DB 1: Result Backend")]
+    subgraph Queue ["Message Broker and State Cache"]
+        Redis[("Redis 7: In-Memory<br/>DB 0: Celery Broker<br/>DB 1: Result Backend")]
     end
 
-    subgraph Workers ["Distributed Worker Pool (Celery)"]
-        Worker["Celery Worker (match_pipeline)"]
+    subgraph Workers ["Distributed Worker Pool: Celery"]
+        Worker["Celery Worker: match_pipeline"]
         subgraph Pipeline ["10-Step AI/ML Processing Pipeline"]
-            Clean["1. Text Cleaning & Regex"]
-            Parse["2. Structured Parsing (JD / Resume)"]
+            Clean["1. Text Cleaning and Regex"]
+            Parse["2. Structured Parsing: JD and Resume"]
             Taxonomy["3. Skill Expansion Taxonomy"]
-            Extract["4. Tech Keyword & Entity Extraction"]
-            Embed["5. Sentence-Transformers (all-MiniLM-L6-v2)"]
-            Cosine["6. Cosine Similarity & Granular Scores"]
-            Matcher["7. Two-Stage Skill Matcher (0.60 Thresh)"]
+            Extract["4. Tech Keyword and Entity Extraction"]
+            Embed["5. Sentence-Transformers: all-MiniLM-L6-v2"]
+            Cosine["6. Cosine Similarity and Granular Scores"]
+            Matcher["7. Two-Stage Skill Matcher: 0.60 Threshold"]
             Calibrate["8. Sigmoid Hiring Probability Calibration"]
             LLMCall["9. Dual-Provider LLM Comprehensive Analysis"]
-            Compile["10. Score Factors & Final Result Assembly"]
+            Compile["10. Score Factors and Final Result Assembly"]
         end
     end
 
     subgraph AIProviders ["External LLM Providers"]
-        Groq["Primary: Groq API<br/>(Llama 3.3-70B Versatile @ 300+ tok/s)"]
-        Together["Fallback: Together AI<br/>(Mistral-Small-24B-Instruct)"]
+        Groq["Primary: Groq API<br/>Llama 3.3-70B Versatile at 300+ tok/s"]
+        Together["Fallback: Together AI<br/>Mistral-Small-24B-Instruct"]
     end
 
-    subgraph Persistence ["Persistence & Auth (Supabase)"]
+    subgraph Persistence ["Persistence and Auth: Supabase"]
         SupaAuth["Supabase GoTrue Auth"]
         PG[("PostgreSQL Database<br/>user_profiles, resumes,<br/>match_results, applications")]
     end
 
     %% Flow connections
     UI -->|1. Multipart PDF| Upload
-    Upload -->|Returns resume_id & text| UI
-    UI -->|2. POST JSON (resume_text + jd_text)| Match
+    Upload -->|Returns resume_id and text| UI
+    UI -->|2. POST JSON resume_text and jd_text| Match
     Match -->|3. Dispatches task| Redis
     Redis -->|4. Consumes task| Worker
     Worker --> Pipeline
     LLMCall -->|Primary HTTP| Groq
-    LLMCall -.->|Failover on error/timeout| Together
+    LLMCall -.->|Failover on error or timeout| Together
     Worker -->|5. Store completed result| Redis
-    UI -->|6. Polls every 2s| Result
-    Result -->|Reads status/result| Redis
+    UI -->|6. Polls every 2 seconds| Result
+    Result -->|Reads status or result| Redis
     UI -->|7. Persists enriched analysis| PG
     UI -->|Auth session| SupaAuth
 ```
