@@ -59,7 +59,7 @@
 
 ### Why Naive "Ask ChatGPT" Approaches Fail
 1. **Non-Deterministic Scoring:** Asking an LLM *"Rate this resume from 1 to 100"* yields varying scores (e.g., 65 on run 1, 88 on run 2) for the exact same input because autoregressive language models are probabilistic token predictors, not calibrated mathematical evaluators.
-2. **Extreme Hallucination in Bullet Points:** Generic prompts often fabricate metrics (e.g., *"Increased revenue by \$4.2M"*) when rewriting bullets, destroying candidate credibility during background checks.
+2. **Extreme Hallucination in Bullet Points:** Generic prompts often fabricate metrics (e.g., *"Increased revenue by USD 4.2M"*) when rewriting bullets, destroying candidate credibility during background checks.
 3. **Prohibitive Latency & Cost:** Running 5 separate prompts (skills, score, roadmap, rewrites, alternate titles) consumes 15 to 25 seconds and costs 5x more tokens, making the application unusable at interactive scale.
 
 ### The SkillGap AI Value Proposition
@@ -245,7 +245,7 @@ flowchart TB
 ### 3. Embeddings: Sentence-Transformers (`all-MiniLM-L6-v2`) vs. OpenAI (`text-embedding-3-small`) vs. TF-IDF
 | Criterion | `all-MiniLM-L6-v2` (Chosen) | OpenAI `text-embedding-3-small` | TF-IDF / BM25 |
 | :--- | :--- | :--- | :--- |
-| **Hosting & Cost** | Self-hosted locally; **\$0 API cost** per million inferences | \$0.02 / 1M tokens; ongoing external API cost | Self-hosted locally; \$0 cost |
+| **Hosting & Cost** | Self-hosted locally; **USD 0 API cost** per million inferences | USD 0.02 / 1M tokens; ongoing external API cost | Self-hosted locally; USD 0 cost |
 | **Latency** | **15–30ms** per document on CPU; 3ms on GPU | 150–400ms network round-trip latency | < 5ms (pure sparse matrix math) |
 | **Semantic Understanding**| Trained specifically for sentence pair semantic similarity (cosine) | Excellent semantic understanding | **Zero semantic understanding** (pure lexical matching) |
 | **Privacy / Compliance** | Candidate resumes **never leave the local infrastructure** | Sends complete candidate resumes to external third-party server | Local |
@@ -260,7 +260,7 @@ flowchart TB
 | :--- | :--- | :--- |
 | **Generation Speed** | **300+ tokens/second** via Groq LPUs (Tensor Streaming Processors) | 40–70 tokens/second |
 | **Total Response Time**| **~2.5 to 3.5 seconds** for 1,200 tokens | 9.0 to 14.0 seconds |
-| **Cost Efficiency** | ~\$0.59 / million tokens (Llama 3.3-70B) | \$5.00 / million tokens (8.5x more expensive) |
+| **Cost Efficiency** | ~USD 0.59 / million tokens (Llama 3.3-70B) | USD 5.00 / million tokens (8.5x more expensive) |
 | **High Availability** | Automatic failover to Together AI (Mistral-Small-24B) if Groq 429s/timeouts | Single point of failure if OpenAI API degrades |
 
 > **Interview Pitch:** *"User experience in resume matching demands near-instantaneous feedback. Traditional OpenAI calls took 10+ seconds. By deploying on Groq's custom LPU hardware with Llama 3.3-70B, generation time dropped to under 3 seconds. To guard against rate limits (HTTP 429), I implemented a circuit breaker with Together AI's Mistral-Small as an automatic fallback."*
@@ -325,14 +325,15 @@ def cosine_distance(vec_a: list, vec_b: list) -> float:
 ### 2. Multi-Component Granular Scoring Architecture
 A candidate might have strong skills but irrelevant projects. A single global cosine score dilutes these nuances. We compute three granular embeddings and blend them:
 
-$$S_{\text{skills}} = \text{cosine}(E_{\text{resume\_skills}}, E_{\text{jd\_skills}})$$
+$$S_{\text{skills}} = \text{cosine}(E_{\text{resume-skills}}, E_{\text{jd-skills}})$$
 
-$$S_{\text{projects}} = \text{cosine}(E_{\text{resume\_projects}}, E_{\text{jd\_role}})$$
+$$S_{\text{projects}} = \text{cosine}(E_{\text{resume-projects}}, E_{\text{jd-role}})$$
 
-$$S_{\text{experience}} = \text{cosine}(E_{\text{resume\_experience}}, E_{\text{jd\_role}})$$
+$$S_{\text{experience}} = \text{cosine}(E_{\text{resume-experience}}, E_{\text{jd-role}})$$
 
-$$\text{Score}_{\text{weighted}} = (w_{\text{skills}} \cdot S_{\text{skills}}) + (w_{\text{projects}} \cdot S_{\text{projects}}) + (w_{\text{experience}} \cdot S_{\text{experience}})$$
-*Where $w_{\text{skills}} = 0.60$, $w_{\text{projects}} = 0.20$, and $w_{\text{experience}} = 0.20$.*
+$$\text{Score}_{\text{weighted}} = (0.60 \times S_{\text{skills}}) + (0.20 \times S_{\text{projects}}) + (0.20 \times S_{\text{experience}})$$
+
+*Weights configured in `params.yaml`: Skills = 60%, Projects = 20%, Experience = 20%.*
 
 #### Additive Context Blending
 To prevent an edge-case where a low global similarity score destroys a candidate who possesses 100% of the required technical skills, we blend the granular weighted score with the overall context:
@@ -362,7 +363,7 @@ $$\text{Bonus}_{\text{keyword}} = \min\left(0.05, \frac{|\text{Resume Skills} \c
 
 $$\text{Penalty}_{\text{exp}} = \max(0, \text{Years}_{\text{required}} - \text{Years}_{\text{candidate}}) \times 0.07$$
 
-$$\text{Hiring Probability} = \text{clamp}\Big(\text{Adjusted Prob} + \text{Bonus}_{\text{keyword}} - \text{Penalty}_{\text{exp}}, \; \min=1, \; \max=99\Big)$$
+$$\text{Hiring Probability} = \text{clamp}\left(\text{Adjusted Prob} + \text{Bonus}_{\text{keyword}} - \text{Penalty}_{\text{exp}}, \; \min=1, \; \max=99\right)$$
 
 ---
 
