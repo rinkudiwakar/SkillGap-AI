@@ -125,7 +125,7 @@ flowchart TB
     end
 
     subgraph Queue ["Message Broker & State Cache"]
-        Redis[("Redis 7 (In-Memory)")<br/>DB 0: Celery Broker<br/>DB 1: Result Backend]
+        Redis[("Redis 7 (In-Memory)<br/>DB 0: Celery Broker<br/>DB 1: Result Backend")]
     end
 
     subgraph Workers ["Distributed Worker Pool (Celery)"]
@@ -151,7 +151,7 @@ flowchart TB
 
     subgraph Persistence ["Persistence & Auth (Supabase)"]
         SupaAuth["Supabase GoTrue Auth"]
-        PG[("PostgreSQL Database")<br/>user_profiles, resumes,<br/>match_results, applications]
+        PG[("PostgreSQL Database<br/>user_profiles, resumes,<br/>match_results, applications")]
     end
 
     %% Flow connections

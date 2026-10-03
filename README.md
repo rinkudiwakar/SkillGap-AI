@@ -54,7 +54,7 @@ flowchart TB
     end
 
     subgraph Broker ["Message & Caching Tier (Redis)"]
-        RedisQueue[("Redis 7.0")<br/>DB 0: Celery Task Broker<br/>DB 1: Result Backend Store]
+        RedisQueue[("Redis 7.0<br/>DB 0: Celery Task Broker<br/>DB 1: Result Backend Store")]
     end
 
     subgraph Compute ["Asynchronous Worker Tier (Celery)"]
@@ -76,7 +76,7 @@ flowchart TB
 
     subgraph Storage ["Persistence Tier (Supabase)"]
         Auth["Supabase GoTrue (JWT Authentication)"]
-        DB[("PostgreSQL Database")<br/>user_profiles, resumes,<br/>match_results, applications]
+        DB[("PostgreSQL Database<br/>user_profiles, resumes,<br/>match_results, applications")]
     end
 
     %% Interactions
